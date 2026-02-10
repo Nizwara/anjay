@@ -505,6 +505,12 @@ verb 3" > /etc/openvpn/server/client-common.txt
 		domain="$ip"
 	fi
 
+	# Copy config to web server directory if it exists
+	if [[ -d /var/www/html ]]; then
+		cp "$script_dir/$client.ovpn" "/var/www/html/$client.ovpn"
+		chmod 644 "/var/www/html/$client.ovpn"
+	fi
+
 	clear
 	TEKS="
 ════════════════════════
@@ -515,7 +521,7 @@ Username     : $client
 Password     : $Pass
 Port OVPN    : $port
 ════════════════════════
-Config OVPN  : $script_dir/$client.ovpn
+Config OVPN  : http://$domain:81/$client.ovpn
 ════════════════════════
 Expired On   : $exp_date
 ════════════════════════
@@ -598,6 +604,12 @@ else
 				protocol=$(grep '^proto ' /etc/openvpn/server/server.conf | awk '{print $2}')
 			fi
 
+			# Copy config to web server directory if it exists
+			if [[ -d /var/www/html ]]; then
+				cp "$script_dir/$client.ovpn" "/var/www/html/$client.ovpn"
+				chmod 644 "/var/www/html/$client.ovpn"
+			fi
+
 			clear
 			TEKS="
 ════════════════════════
@@ -608,7 +620,7 @@ Username     : $client
 Password     : $Pass
 Port OVPN    : $port
 ════════════════════════
-Config OVPN  : $script_dir/$client.ovpn
+Config OVPN  : http://$domain:81/$client.ovpn
 ════════════════════════
 Expired On   : $exp_date
 ════════════════════════
