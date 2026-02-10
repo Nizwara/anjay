@@ -549,15 +549,6 @@ Expired On   : $exp_date
 ════════════════════════
 By: GLOBAL TUNNELING NUSANTARA"
 
-			# Telegram Notification
-			CHATID=$(cat /etc/skartivpn/.chatid 2>/dev/null)
-			KEY=$(cat /etc/skartivpn/.keybot 2>/dev/null)
-			TIME="10"
-			URL="https://api.telegram.org/bot$KEY/sendMessage"
-			if [[ -n "$CHATID" && -n "$KEY" ]]; then
-				curl -s --max-time $TIME --data-urlencode "chat_id=$CHATID" --data-urlencode "text=$TEKS" $URL &>/dev/null
-			fi
-
 			clear
 			echo -e "$TEKS"
 			echo -e "\nThe client configuration is available in: ${BOLD}$script_dir/$client.ovpn${NC}"
