@@ -280,7 +280,7 @@ LimitNPROC=infinity" > /etc/systemd/system/openvpn-server@server.service.d/disab
 	fi
 	if [[ "$os" = "debian" || "$os" = "ubuntu" ]]; then
 		apt-get update
-		apt-get install -y --no-install-recommends openvpn openssl ca-certificates $firewall
+		apt-get install -y --no-install-recommends openvpn openssl ca-certificates libpam-modules $firewall
 	elif [[ "$os" = "centos" ]]; then
 		dnf install -y epel-release
 		dnf install -y openvpn openssl ca-certificates tar $firewall
@@ -329,20 +329,10 @@ ssbzSibBsu/6iGtCOGEoXJf//////////wIBAg==
 	# Without +x in the directory, OpenVPN can't run a stat() on the CRL file
 	chmod o+x /etc/openvpn/server/
 	# Generate server.conf
-	# Find the PAM module
-	if [[ -f /usr/lib/openvpn/plugins/openvpn-plugin-auth-pam.so ]]; then
-		pam_plugin="/usr/lib/openvpn/plugins/openvpn-plugin-auth-pam.so"
-	elif [[ -f /usr/lib/x86_64-linux-gnu/openvpn/plugins/openvpn-plugin-auth-pam.so ]]; then
-		pam_plugin="/usr/lib/x86_64-linux-gnu/openvpn/plugins/openvpn-plugin-auth-pam.so"
-	elif [[ -f /usr/lib64/openvpn/plugins/openvpn-plugin-auth-pam.so ]]; then
-		pam_plugin="/usr/lib64/openvpn/plugins/openvpn-plugin-auth-pam.so"
-	elif [[ -f /usr/lib/openvpn/openvpn-plugin-auth-pam.so ]]; then
-		pam_plugin="/usr/lib/openvpn/openvpn-plugin-auth-pam.so"
-	else
-		pam_plugin=$(find /usr/lib /usr/lib64 -name "openvpn-plugin-auth-pam.so" 2>/dev/null | head -n 1)
-	fi
+	# Deteksi path PAM secara akurat
+	PAM_PATH=$(find /usr/lib* -name "openvpn-plugin-auth-pam.so" | head -n 1)
 
-	if [[ -z "$pam_plugin" ]]; then
+	if [[ -z "$PAM_PATH" ]]; then
 		echo "Error: openvpn-plugin-auth-pam.so not found. Authentication setup will fail."
 		exit 1
 	fi
@@ -359,11 +349,16 @@ auth SHA512
 tls-crypt tc.key
 topology subnet
 server 10.8.0.0 255.255.255.0
-# --- Tambahan agar Username & Password Berfungsi ---
+# Autentikasi Username & Password
 verify-client-cert none
 username-as-common-name
-plugin $pam_plugin login
-# --------------------------------------------------" > /etc/openvpn/server/server.conf
+plugin $PAM_PATH login
+# Parameter tambahan agar login lancar
+persist-key
+persist-tun
+keepalive 10 120
+verb 3
+crl-verify crl.pem" > /etc/openvpn/server/server.conf
 	# IPv6
 	if [[ -z "$ip6" ]]; then
 		echo 'push "redirect-gateway def1 bypass-dhcp"' >> /etc/openvpn/server/server.conf
@@ -415,13 +410,6 @@ plugin $pam_plugin login
 		;;
 	esac
 	echo 'push "block-outside-dns"' >> /etc/openvpn/server/server.conf
-	echo "keepalive 10 120
-#user nobody
-#group $group_name
-persist-key
-persist-tun
-verb 3
-crl-verify crl.pem" >> /etc/openvpn/server/server.conf
 	if [[ "$protocol" = "udp" ]]; then
 		echo "explicit-exit-notify" >> /etc/openvpn/server/server.conf
 	fi
