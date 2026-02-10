@@ -519,7 +519,7 @@ verb 3" > /etc/openvpn/server/client-common.txt
 Host         : $domain
 Username     : $client
 Password     : $Pass
-Port OVPN    : $port $protocol
+Port OVPN    : $port
 ════════════════════════
 Config OVPN  : $script_dir/$client.ovpn
 ════════════════════════
@@ -536,6 +536,12 @@ else
 		# Try to get it from openvpn config
 		config_domain=$(grep '^remote ' /etc/openvpn/server/client-common.txt | awk '{print $2}')
 		[[ -n "$config_domain" ]] && domain="$config_domain"
+	fi
+
+	# Fallback to public IP if domain is still empty
+	if [[ -z "$domain" ]]; then
+		# Detect public IPv4 address
+		domain=$(grep -m 1 -oE '^[0-9]{1,3}(\.[0-9]{1,3}){3}$' <<< "$(wget -T 10 -t 1 -4qO- "http://ip1.dynupdate.no-ip.com/" || curl -m 10 -4Ls "http://ip1.dynupdate.no-ip.com/")")
 	fi
 
 	clear
