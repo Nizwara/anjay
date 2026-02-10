@@ -95,7 +95,27 @@ fi
 # Store the absolute path of the directory where the script is located
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+# Load configuration variables from sc contoh context
+# These files are assumed to exist based on the user's environment
+[[ -f /root/.isp ]] && izp=$(cat /root/.isp)
+[[ -f /root/.region ]] && region=$(cat /root/.region)
+[[ -f /root/.city ]] && city=$(cat /root/.city)
+[[ -f /etc/xray/domain ]] && domain=$(cat /etc/xray/domain)
+if [ -f /etc/xray/domssh ]; then
+	domargo=$(cat /etc/xray/domssh)
+	domain=$domssh
+fi
+
+# Date calculation
+dateFromServer=$(curl -v --insecure --silent https://google.com/ 2>&1 | grep Date | sed -e 's/< Date: //')
+biji=$(date +"%Y-%m-%d" -d "$dateFromServer")
+
 if [[ ! -e /etc/openvpn/server/server.conf ]]; then
+	# Fallback if domain is missing for initial install
+	if [[ -z "$domain" ]]; then
+		domain="$ip"
+	fi
+
 	# Detect some Debian minimal setups where neither wget nor curl are installed
 	if ! hash wget 2>/dev/null && ! hash curl 2>/dev/null; then
 		echo "Wget is required to use this installer."
@@ -229,10 +249,18 @@ if [[ ! -e /etc/openvpn/server/server.conf ]]; then
 	fi
 
 	# Client Name
-	echo -e "\n${MAGENTA}┌──────────────────────────────────────────────┐${NC}"
-	echo -e "${MAGENTA}│${NC}               ${BOLD}First Client Name${NC}              ${MAGENTA}│${NC}"
-	echo -e "${MAGENTA}└──────────────────────────────────────────────┘${NC}"
-	read -p "  → Name [client]: " unsanitized_client
+	clear
+	echo -e "\e[33m═══════════════════════════════════\033[0m"
+	echo -e "\E[40;1;37m      ❖ SSH VPN Account ❖          \E[0m"
+	echo -e "\e[33m═══════════════════════════════════\033[0m"
+	read -p "➯ Username     : " Login
+	read -p "➯ Password     : " Pass
+	read -p "➯ Limit IP     : " iplimit
+	read -p "➯ Masa Aktif   : " masaaktif
+	echo -e "\e[33m═══════════════════════════════════\033[0m"
+	clear
+
+	unsanitized_client="$Login"
 	# Allow a limited set of characters to avoid conflicts
 	client=$(sed 's/[^0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-]/_/g' <<< "$unsanitized_client")
 	[[ -z "$client" ]] && client="client"
@@ -279,6 +307,10 @@ LimitNPROC=infinity" > /etc/systemd/system/openvpn-server@server.service.d/disab
 	./easyrsa --batch init-pki
 	./easyrsa --batch build-ca nopass
 	./easyrsa gen-tls-crypt-key
+	if [ ! -f pki/private/easyrsa-tls.key ]; then
+		# Fallback for OpenVPN 2.4 / EasyRSA issues
+		openvpn --genkey --secret pki/private/easyrsa-tls.key
+	fi
 	# Create the DH parameters file using the predefined ffdhe2048 group
 	echo '-----BEGIN DH PARAMETERS-----
 MIIBCAKCAQEA//////////+t+FRYortKmq/cViAnPTzx2LnFg84tNpWp4TZBFGQz
@@ -458,27 +490,53 @@ ignore-unknown-option block-outside-dns
 verb 3" > /etc/openvpn/server/client-common.txt
 	systemctl enable --now openvpn-server@server.service
 	grep -vh '^#' /etc/openvpn/server/client-common.txt /etc/openvpn/server/easy-rsa/pki/inline/private/"$client".inline > "$script_dir"/"$client".ovpn
-	echo -e "\n${GREEN}Finished!${NC}"
-	echo -e "The client configuration is available in: ${BOLD}$script_dir/$client.ovpn${NC}"
-else
-	# Load configuration variables from sc contoh context
-	# These files are assumed to exist based on the user's environment
-	[[ -f /root/.isp ]] && izp=$(cat /root/.isp)
-	[[ -f /root/.region ]] && region=$(cat /root/.region)
-	[[ -f /root/.city ]] && city=$(cat /root/.city)
-	[[ -f /etc/xray/domain ]] && domain=$(cat /etc/xray/domain)
-	if [ -f /etc/xray/domssh ]; then
-		domargo=$(cat /etc/xray/domssh)
-		domain=$domssh
-	fi
-	# Fallback if domain is missing, try to get it from openvpn config
-	if [[ -z "$domain" ]]; then
-		domain=$(grep '^remote ' /etc/openvpn/server/client-common.txt | awk '{print $2}')
+
+	# IP Limit Logic
+	mkdir -p /etc/openvpn/limit/
+	if [[ $iplimit -gt 0 ]]; then
+		echo -e "$iplimit" > /etc/openvpn/limit/$client
 	fi
 
-	# Date calculation
-	dateFromServer=$(curl -v --insecure --silent https://google.com/ 2>&1 | grep Date | sed -e 's/< Date: //')
-	biji=$(date +"%Y-%m-%d" -d "$dateFromServer")
+	# Create system user for expiration management
+	useradd -e $(date -d "$masaaktif days" +"%Y-%m-%d") -s /bin/false -M $client
+	echo -e "$Pass\n$Pass\n" | passwd $client &> /dev/null
+	echo "$client:$Pass" | chpasswd
+
+	# Calculate expiration date for display
+	exp_date=$(date -d "$masaaktif days" +"%Y-%m-%d")
+
+			# Get port and protocol from server config if variables are empty
+			if [[ -z "$port" || -z "$protocol" ]]; then
+				port=$(grep '^port ' /etc/openvpn/server/server.conf | cut -d " " -f 2)
+				protocol=$(grep '^proto ' /etc/openvpn/server/server.conf | cut -d " " -f 2)
+			fi
+
+	clear
+	TEKS="
+════════════════════════
+  ❖ OPENVPN PREMIUM ❖
+════════════════════════
+Host         : $domain
+Username     : $client
+Password     : $Pass
+Port OVPN    : $port $protocol
+════════════════════════
+Config OVPN  : $script_dir/$client.ovpn
+════════════════════════
+Expired On   : $exp_date
+════════════════════════
+By: GLOBAL TUNNELING NUSANTARA"
+
+	clear
+	echo -e "$TEKS"
+	echo -e "\nThe client configuration is available in: ${BOLD}$script_dir/$client.ovpn${NC}"
+else
+	# Load domain from existing config if not already set (e.g. if script run again)
+	if [[ -z "$domain" || "$domain" == "$ip" ]]; then
+		# Try to get it from openvpn config
+		config_domain=$(grep '^remote ' /etc/openvpn/server/client-common.txt | awk '{print $2}')
+		[[ -n "$config_domain" ]] && domain="$config_domain"
+	fi
 
 	clear
 	echo -e "${CYAN}  ╔════════════════════════════════════════════════════╗${NC}"
