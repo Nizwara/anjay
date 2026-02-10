@@ -337,6 +337,10 @@ ssbzSibBsu/6iGtCOGEoXJf//////////wIBAg==
 		exit 1
 	fi
 
+	# BUAT FOLDER TMP (Penting!)
+	mkdir -p /etc/openvpn/server/tmp
+	chmod 700 /etc/openvpn/server/tmp
+
 	echo "local $ip
 port $port
 proto $protocol
@@ -349,11 +353,14 @@ auth SHA512
 tls-crypt tc.key
 topology subnet
 server 10.8.0.0 255.255.255.0
-# Autentikasi Username & Password
+
+# --- KRITIKAL: Autentikasi Username & Password ---
 verify-client-cert none
 username-as-common-name
 plugin $PAM_PATH login
-# Parameter tambahan agar login lancar
+tmp-dir /etc/openvpn/server/tmp
+
+# --- Parameter Stabilitas ---
 persist-key
 persist-tun
 keepalive 10 120
