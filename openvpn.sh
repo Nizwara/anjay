@@ -111,11 +111,6 @@ dateFromServer=$(curl -v --insecure --silent https://google.com/ 2>&1 | grep Dat
 biji=$(date +"%Y-%m-%d" -d "$dateFromServer")
 
 if [[ ! -e /etc/openvpn/server/server.conf ]]; then
-	# Fallback if domain is missing for initial install
-	if [[ -z "$domain" ]]; then
-		domain="$ip"
-	fi
-
 	# Detect some Debian minimal setups where neither wget nor curl are installed
 	if ! hash wget 2>/dev/null && ! hash curl 2>/dev/null; then
 		echo "Wget is required to use this installer."
@@ -505,11 +500,10 @@ verb 3" > /etc/openvpn/server/client-common.txt
 	# Calculate expiration date for display
 	exp_date=$(date -d "$masaaktif days" +"%Y-%m-%d")
 
-			# Get port and protocol from server config if variables are empty
-			if [[ -z "$port" || -z "$protocol" ]]; then
-				port=$(grep '^port ' /etc/openvpn/server/server.conf | cut -d " " -f 2)
-				protocol=$(grep '^proto ' /etc/openvpn/server/server.conf | cut -d " " -f 2)
-			fi
+	# Fallback if domain is missing
+	if [[ -z "$domain" ]]; then
+		domain="$ip"
+	fi
 
 	clear
 	TEKS="
@@ -534,7 +528,7 @@ else
 	# Load domain from existing config if not already set (e.g. if script run again)
 	if [[ -z "$domain" || "$domain" == "$ip" ]]; then
 		# Try to get it from openvpn config
-		config_domain=$(grep '^remote ' /etc/openvpn/server/client-common.txt | awk '{print $2}')
+		config_domain=$(grep '^remote ' /etc/openvpn/server/client-common.txt | awk '{print $2}' | head -1)
 		[[ -n "$config_domain" ]] && domain="$config_domain"
 	fi
 
@@ -598,9 +592,11 @@ else
 			# Calculate expiration date for display
 			exp_date=$(date -d "$masaaktif days" +"%Y-%m-%d")
 
-			cd /etc/openvpn/server/easy-rsa/
-			./easyrsa --batch --days=3650 build-client-full "$client" nopass
-			grep -vh '^#' /etc/openvpn/server/client-common.txt /etc/openvpn/server/easy-rsa/pki/inline/private/"$client".inline > "$script_dir"/"$client".ovpn
+			# Get port and protocol from server config if variables are empty
+			if [[ -z "$port" || -z "$protocol" ]]; then
+				port=$(grep '^port ' /etc/openvpn/server/server.conf | awk '{print $2}')
+				protocol=$(grep '^proto ' /etc/openvpn/server/server.conf | awk '{print $2}')
+			fi
 
 			clear
 			TEKS="
@@ -610,9 +606,9 @@ else
 Host         : $domain
 Username     : $client
 Password     : $Pass
-Port OVPN    : $port $protocol
+Port OVPN    : $port
 ════════════════════════
-Config OVPN  : http://$domain:8081/$client.ovpn
+Config OVPN  : $script_dir/$client.ovpn
 ════════════════════════
 Expired On   : $exp_date
 ════════════════════════
