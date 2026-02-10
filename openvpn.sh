@@ -270,6 +270,19 @@ if [[ ! -e /etc/openvpn/server/server.conf ]]; then
 			firewall="iptables"
 		fi
 	fi
+
+	# Open port 80 and 81 for Nginx/Certbot
+	if systemctl is-active --quiet firewalld.service; then
+		firewall-cmd --add-port=80/tcp
+		firewall-cmd --add-port=81/tcp
+		firewall-cmd --permanent --add-port=80/tcp
+		firewall-cmd --permanent --add-port=81/tcp
+	else
+		iptables_path=$(command -v iptables)
+		$iptables_path -I INPUT -p tcp --dport 80 -j ACCEPT
+		$iptables_path -I INPUT -p tcp --dport 81 -j ACCEPT
+	fi
+
 	read -n1 -r -p "Press any key to continue..."
 
 	# If running inside a container, disable LimitNPROC to prevent conflicts
@@ -280,13 +293,13 @@ LimitNPROC=infinity" > /etc/systemd/system/openvpn-server@server.service.d/disab
 	fi
 	if [[ "$os" = "debian" || "$os" = "ubuntu" ]]; then
 		apt-get update
-		apt-get install -y --no-install-recommends openvpn openssl ca-certificates $firewall
+		apt-get install -y --no-install-recommends openvpn openssl ca-certificates $firewall nginx python3-certbot-nginx certbot
 	elif [[ "$os" = "centos" ]]; then
 		dnf install -y epel-release
-		dnf install -y openvpn openssl ca-certificates tar $firewall
+		dnf install -y openvpn openssl ca-certificates tar $firewall nginx python3-certbot-nginx certbot
 	else
 		# Else, OS must be Fedora
-		dnf install -y openvpn openssl ca-certificates tar $firewall
+		dnf install -y openvpn openssl ca-certificates tar $firewall nginx python3-certbot-nginx certbot
 	fi
 	# If firewalld was just installed, enable it
 	if [[ "$firewall" == "firewalld" ]]; then
@@ -485,6 +498,35 @@ ignore-unknown-option block-outside-dns
 verb 3" > /etc/openvpn/server/client-common.txt
 	systemctl enable --now openvpn-server@server.service
 	grep -vh '^#' /etc/openvpn/server/client-common.txt /etc/openvpn/server/easy-rsa/pki/inline/private/"$client".inline > "$script_dir"/"$client".ovpn
+
+	# Configure Nginx to listen on port 81 and server config files
+	if [[ -d /etc/nginx/sites-available ]]; then
+		# Check if config already exists
+		if [[ ! -f /etc/nginx/sites-available/openvpn ]]; then
+			echo "server {
+	listen 81;
+	listen [::]:81;
+	server_name $domain;
+	root /var/www/html;
+	index index.html index.htm index.nginx-debian.html;
+
+	location / {
+		try_files \$uri \$uri/ =404;
+	}
+}" > /etc/nginx/sites-available/openvpn
+			ln -s /etc/nginx/sites-available/openvpn /etc/nginx/sites-enabled/
+			rm -f /etc/nginx/sites-enabled/default
+			systemctl restart nginx
+		fi
+	fi
+
+	# Attempt to obtain SSL certificate if domain is valid and not an IP
+	if [[ "$domain" != "$ip" && ! "$domain" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+		# Stop nginx momentarily to free port 80 if needed, though certbot --nginx should handle it.
+		# However, if port 80 is used by another service, certbot might fail.
+		# We'll use --nginx plugin which should be safe.
+		certbot --nginx -d $domain --non-interactive --agree-tos --register-unsafely-without-email --redirect
+	fi
 
 	# IP Limit Logic
 	mkdir -p /etc/openvpn/limit/
