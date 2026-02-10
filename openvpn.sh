@@ -95,6 +95,75 @@ fi
 # Store the absolute path of the directory where the script is located
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+# Function to install and configure Nginx
+function install_nginx_setup() {
+	if ! hash nginx 2>/dev/null; then
+		if [[ "$os" = "debian" || "$os" = "ubuntu" ]]; then
+			apt-get update
+			apt-get install -y nginx python3-certbot-nginx certbot
+		elif [[ "$os" = "centos" ]]; then
+			dnf install -y nginx python3-certbot-nginx certbot
+		else
+			dnf install -y nginx python3-certbot-nginx certbot
+		fi
+	fi
+
+	# Configure Nginx
+	if [[ -d /etc/nginx/sites-available ]]; then
+		# Debian/Ubuntu
+		if [[ ! -f /etc/nginx/sites-available/openvpn ]]; then
+			echo "server {
+	listen 81;
+	listen [::]:81;
+	server_name $domain;
+	root /var/www/html;
+	index index.html index.htm index.nginx-debian.html;
+
+	location / {
+		try_files \$uri \$uri/ =404;
+	}
+}" > /etc/nginx/sites-available/openvpn
+			ln -s /etc/nginx/sites-available/openvpn /etc/nginx/sites-enabled/
+			rm -f /etc/nginx/sites-enabled/default
+		fi
+	elif [[ -d /etc/nginx/conf.d ]]; then
+		# CentOS/Fedora
+		if [[ ! -f /etc/nginx/conf.d/openvpn.conf ]]; then
+			echo "server {
+	listen 81;
+	listen [::]:81;
+	server_name $domain;
+	root /usr/share/nginx/html;
+	index index.html index.htm;
+
+	location / {
+		try_files \$uri \$uri/ =404;
+	}
+}" > /etc/nginx/conf.d/openvpn.conf
+		fi
+	fi
+
+	# Open ports 80 and 81
+	if systemctl is-active --quiet firewalld.service; then
+		firewall-cmd --add-port=80/tcp
+		firewall-cmd --add-port=81/tcp
+		firewall-cmd --permanent --add-port=80/tcp
+		firewall-cmd --permanent --add-port=81/tcp
+	else
+		iptables_path=$(command -v iptables)
+		# Check if rule exists before adding
+		if ! $iptables_path -C INPUT -p tcp --dport 80 -j ACCEPT 2>/dev/null; then
+			$iptables_path -I INPUT -p tcp --dport 80 -j ACCEPT
+		fi
+		if ! $iptables_path -C INPUT -p tcp --dport 81 -j ACCEPT 2>/dev/null; then
+			$iptables_path -I INPUT -p tcp --dport 81 -j ACCEPT
+		fi
+	fi
+
+	systemctl enable --now nginx
+	systemctl restart nginx
+}
+
 # Load configuration variables from sc contoh context
 # These files are assumed to exist based on the user's environment
 [[ -f /root/.isp ]] && izp=$(cat /root/.isp)
@@ -272,16 +341,7 @@ if [[ ! -e /etc/openvpn/server/server.conf ]]; then
 	fi
 
 	# Open port 80 and 81 for Nginx/Certbot
-	if systemctl is-active --quiet firewalld.service; then
-		firewall-cmd --add-port=80/tcp
-		firewall-cmd --add-port=81/tcp
-		firewall-cmd --permanent --add-port=80/tcp
-		firewall-cmd --permanent --add-port=81/tcp
-	else
-		iptables_path=$(command -v iptables)
-		$iptables_path -I INPUT -p tcp --dport 80 -j ACCEPT
-		$iptables_path -I INPUT -p tcp --dport 81 -j ACCEPT
-	fi
+	# Moved to install_nginx_setup function
 
 	read -n1 -r -p "Press any key to continue..."
 
@@ -293,14 +353,17 @@ LimitNPROC=infinity" > /etc/systemd/system/openvpn-server@server.service.d/disab
 	fi
 	if [[ "$os" = "debian" || "$os" = "ubuntu" ]]; then
 		apt-get update
-		apt-get install -y --no-install-recommends openvpn openssl ca-certificates $firewall nginx python3-certbot-nginx certbot
+		apt-get install -y --no-install-recommends openvpn openssl ca-certificates $firewall
 	elif [[ "$os" = "centos" ]]; then
 		dnf install -y epel-release
-		dnf install -y openvpn openssl ca-certificates tar $firewall nginx python3-certbot-nginx certbot
+		dnf install -y openvpn openssl ca-certificates tar $firewall
 	else
 		# Else, OS must be Fedora
-		dnf install -y openvpn openssl ca-certificates tar $firewall nginx python3-certbot-nginx certbot
+		dnf install -y openvpn openssl ca-certificates tar $firewall
 	fi
+
+	# Install and Setup Nginx
+	install_nginx_setup
 	# If firewalld was just installed, enable it
 	if [[ "$firewall" == "firewalld" ]]; then
 		systemctl enable --now firewalld.service
@@ -457,6 +520,8 @@ ExecStart=$iptables_path -w 5 -t nat -A POSTROUTING -s 10.8.0.0/24 ! -d 10.8.0.0
 ExecStart=$iptables_path -w 5 -I INPUT -p $protocol --dport $port -j ACCEPT
 ExecStart=$iptables_path -w 5 -I FORWARD -s 10.8.0.0/24 -j ACCEPT
 ExecStart=$iptables_path -w 5 -I FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
+ExecStart=$iptables_path -w 5 -I INPUT -p tcp --dport 80 -j ACCEPT
+ExecStart=$iptables_path -w 5 -I INPUT -p tcp --dport 81 -j ACCEPT
 ExecStop=$iptables_path -w 5 -t nat -D POSTROUTING -s 10.8.0.0/24 ! -d 10.8.0.0/24 -j SNAT --to $ip
 ExecStop=$iptables_path -w 5 -D INPUT -p $protocol --dport $port -j ACCEPT
 ExecStop=$iptables_path -w 5 -D FORWARD -s 10.8.0.0/24 -j ACCEPT
@@ -499,26 +564,7 @@ verb 3" > /etc/openvpn/server/client-common.txt
 	systemctl enable --now openvpn-server@server.service
 	grep -vh '^#' /etc/openvpn/server/client-common.txt /etc/openvpn/server/easy-rsa/pki/inline/private/"$client".inline > "$script_dir"/"$client".ovpn
 
-	# Configure Nginx to listen on port 81 and server config files
-	if [[ -d /etc/nginx/sites-available ]]; then
-		# Check if config already exists
-		if [[ ! -f /etc/nginx/sites-available/openvpn ]]; then
-			echo "server {
-	listen 81;
-	listen [::]:81;
-	server_name $domain;
-	root /var/www/html;
-	index index.html index.htm index.nginx-debian.html;
-
-	location / {
-		try_files \$uri \$uri/ =404;
-	}
-}" > /etc/nginx/sites-available/openvpn
-			ln -s /etc/nginx/sites-available/openvpn /etc/nginx/sites-enabled/
-			rm -f /etc/nginx/sites-enabled/default
-			systemctl restart nginx
-		fi
-	fi
+	# Nginx configuration moved to install_nginx_setup function
 
 	# Attempt to obtain SSL certificate if domain is valid and not an IP
 	if [[ "$domain" != "$ip" && ! "$domain" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -573,6 +619,9 @@ By: GLOBAL TUNNELING NUSANTARA"
 	echo -e "$TEKS"
 	echo -e "\nThe client configuration is available in: ${BOLD}$script_dir/$client.ovpn${NC}"
 else
+	# Ensure Nginx is setup even if running in management mode
+	install_nginx_setup
+
 	# Load domain from existing config if not already set (e.g. if script run again)
 	if [[ -z "$domain" || "$domain" == "$ip" ]]; then
 		# Try to get it from openvpn config
