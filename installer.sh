@@ -43,7 +43,17 @@ echo -e "\n${GREEN}Memulai proses instalasi ulang...${NC}"
 echo "nameserver 8.8.8.8" > /etc/resolv.conf
 
 # --- FIX: BERSIHKAN SERVICE LAMA ---
-systemctl stop aria2 nginx filebrowser 2>/dev/null || true
+systemctl stop aria2 nginx filebrowser casaos-gateway casaos 2>/dev/null || true
+rm -f /var/run/nginx.pid
+
+# --- FIX: KONFIGURASI PORT CASAOS (Hindari Konflik dengan Nginx Port 80) ---
+# Jalankan ini di awal agar Nginx bisa memakai Port 80 untuk SSL
+if [ -f /etc/casaos/gateway.ini ]; then
+    echo -e "${YELLOW}Mengubah Port CasaOS ke 81 untuk menghindari konflik...${NC}"
+    sed -i 's/^port=.*/port=81/' /etc/casaos/gateway.ini
+    sed -i 's/^port =.*/port = 81/' /etc/casaos/gateway.ini
+    # Jangan restart dulu, biar mati
+fi
 
 # 1. Update & Dependencies
 apt update && apt install -y wget curl unzip tar aria2 nginx apache2-utils certbot python3-certbot-nginx python3-pip
@@ -239,10 +249,8 @@ else
     echo "CasaOS sudah terinstall."
 fi
 
-# --- FIX: KONFIGURASI PORT CASAOS (Hindari Konflik dengan Nginx Port 80) ---
-# Kita ubah port CasaOS ke 81 agar Nginx (Port 80) tetap jalan untuk GTN Downloader
+# --- FIX: KONFIGURASI ULANG PORT CASAOS (Jaga-jaga setelah install baru) ---
 if [ -f /etc/casaos/gateway.ini ]; then
-    echo -e "${YELLOW}Mengubah Port CasaOS ke 81 untuk menghindari konflik...${NC}"
     sed -i 's/^port=.*/port=81/' /etc/casaos/gateway.ini
     sed -i 's/^port =.*/port = 81/' /etc/casaos/gateway.ini
     systemctl restart casaos-gateway || systemctl restart casaos
