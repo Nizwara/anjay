@@ -56,7 +56,7 @@ if [ -f /etc/casaos/gateway.ini ]; then
 fi
 
 # 1. Update & Dependencies
-apt update && apt install -y wget curl unzip tar aria2 nginx apache2-utils certbot python3-certbot-nginx python3-pip
+apt update && apt install -y wget curl unzip tar aria2 nginx apache2-utils certbot python3-certbot-nginx python3-pip psmisc
 
 # --- FIX: DEPENDENCY CONFLICT (urllib3) ---
 # Hapus library python yang mungkin bentrok dengan Certbot bawaan APT
@@ -223,9 +223,24 @@ rm -f /etc/nginx/sites-enabled/default
 echo -e "${GREEN}Memeriksa konfigurasi Nginx...${NC}"
 nginx -t || { echo -e "${RED}Konfigurasi Nginx Error!${NC}"; exit 1; }
 
+# --- FIX: FORCE KILL PORT 80/443 (Jaga-jaga ada process bandel) ---
+echo -e "${YELLOW}Memastikan Port 80 & 443 Kosong...${NC}"
+fuser -k 80/tcp || true
+fuser -k 443/tcp || true
+
 if [ -n "$MY_DOMAIN" ]; then
     echo -e "${GREEN}Mengajukan SSL untuk $MY_DOMAIN...${NC}"
-    systemctl restart nginx || true
+
+    # Coba restart nginx dengan debug jika gagal
+    if ! systemctl restart nginx; then
+        echo -e "${RED}Gagal memulai Nginx! Cek log dibawah:${NC}"
+        echo -e "${YELLOW}--- systemctl status nginx ---${NC}"
+        systemctl status nginx --no-pager
+        echo -e "${YELLOW}--- journalctl -xe ---${NC}"
+        journalctl -xe --no-pager | tail -n 50
+        exit 1
+    fi
+
     certbot --nginx -d "$MY_DOMAIN" --non-interactive --agree-tos --register-unsafely-without-email
     FINAL_URL="https://$MY_DOMAIN"
 else
@@ -239,7 +254,7 @@ if [ -n "$CASA_DOMAIN" ]; then
 else
     CASA_URL="http://$(curl -s ifconfig.me):81"
 fi
-systemctl restart nginx
+systemctl restart nginx || true
 
 # 8. Install CasaOS (Opsional tapi Requested)
 echo -e "${GREEN}Menginstall CasaOS...${NC}"
