@@ -32,7 +32,8 @@ read -p "RPC Secret Token: " RPC_SECRET
 RPC_SECRET=${RPC_SECRET:-gtn-secret-token}
 
 echo -e "\n${YELLOW}>>> Konfigurasi Domain:${NC}"
-read -p "Domain (Kosongkan jika hanya pakai IP): " MY_DOMAIN
+read -p "Domain Utama (GTN Downloader) (Kosongkan jika hanya pakai IP): " MY_DOMAIN
+read -p "Subdomain CasaOS (Opsional, misal: os.domain.com): " CASA_DOMAIN
 
 # --- EKSEKUSI ---
 set -e
@@ -167,7 +168,34 @@ server {
         proxy_set_header X-Forwarded-Proto \$scheme;
     }
 }
+
+# --- BLOK SERVER UNTUK CASAOS (SUBDOMAIN) ---
 EOF
+
+if [ -n "$CASA_DOMAIN" ]; then
+cat >> /etc/nginx/sites-available/ariang <<EOF
+
+server {
+    listen 80;
+    server_name $CASA_DOMAIN;
+
+    client_max_body_size 0;
+
+    location / {
+        proxy_pass http://127.0.0.1:81;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+
+        # Websocket Support
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
+EOF
+fi
 
 ln -sf /etc/nginx/sites-available/ariang /etc/nginx/sites-enabled/
 rm -f /etc/nginx/sites-enabled/default
@@ -177,12 +205,48 @@ if [ -n "$MY_DOMAIN" ]; then
     echo -e "${GREEN}Mengajukan SSL untuk $MY_DOMAIN...${NC}"
     systemctl restart nginx || true
     certbot --nginx -d "$MY_DOMAIN" --non-interactive --agree-tos --register-unsafely-without-email
-    systemctl restart nginx
     FINAL_URL="https://$MY_DOMAIN"
 else
-    systemctl restart nginx
     FINAL_URL="http://$(curl -s ifconfig.me)"
 fi
+
+if [ -n "$CASA_DOMAIN" ]; then
+    echo -e "${GREEN}Mengajukan SSL untuk CasaOS ($CASA_DOMAIN)...${NC}"
+    certbot --nginx -d "$CASA_DOMAIN" --non-interactive --agree-tos --register-unsafely-without-email
+    CASA_URL="https://$CASA_DOMAIN"
+else
+    CASA_URL="http://$(curl -s ifconfig.me):81"
+fi
+systemctl restart nginx
+
+# 8. Install CasaOS (Opsional tapi Requested)
+echo -e "${GREEN}Menginstall CasaOS...${NC}"
+if ! command -v casaos &> /dev/null; then
+    curl -fsSL https://get.casaos.io | sudo bash
+else
+    echo "CasaOS sudah terinstall."
+fi
+
+# --- FIX: KONFIGURASI PORT CASAOS (Hindari Konflik dengan Nginx Port 80) ---
+# Kita ubah port CasaOS ke 81 agar Nginx (Port 80) tetap jalan untuk GTN Downloader
+if [ -f /etc/casaos/gateway.ini ]; then
+    echo -e "${YELLOW}Mengubah Port CasaOS ke 81 untuk menghindari konflik...${NC}"
+    sed -i 's/^port=.*/port=81/' /etc/casaos/gateway.ini
+    sed -i 's/^port =.*/port = 81/' /etc/casaos/gateway.ini
+    systemctl restart casaos-gateway || systemctl restart casaos
+fi
+
+# --- FIX: HUBUNGKAN FOLDER DOWNLOAD KE CASAOS ---
+mkdir -p /DATA/Downloads
+mount --bind "$DOWNLOAD_DIR" /DATA/Downloads || true
+# Agar permanen setelah reboot
+if ! grep -q "$DOWNLOAD_DIR /DATA/Downloads" /etc/fstab; then
+    echo "$DOWNLOAD_DIR /DATA/Downloads none bind 0 0" >> /etc/fstab
+fi
+
+# --- FIX: BUAT SHORTCUT GTN DI CASAOS (Via File App Store Manual) ---
+# Tidak ada cara resmi via CLI untuk add shortcut external app di CasaOS saat ini tanpa API token.
+# Kita akan memberikan instruksi manual di akhir.
 
 clear
 echo -e "${CYAN}====================================================${NC}"
@@ -191,6 +255,7 @@ echo -e "${CYAN}====================================================${NC}"
 echo -e "${YELLOW}Nama Brand     :${NC} $WEB_TITLE"
 echo -e "${YELLOW}URL Utama      :${NC} $FINAL_URL"
 echo -e "${YELLOW}File Manager   :${NC} $FINAL_URL/files/"
+echo -e "${YELLOW}CasaOS Panel   :${NC} $CASA_URL"
 echo -e "${YELLOW}Username       :${NC} $USER_NAME"
 echo -e "${YELLOW}Password       :${NC} $USER_PASS"
 echo -e "${YELLOW}RPC Secret     :${NC} $RPC_SECRET"
@@ -202,4 +267,12 @@ echo -e "3. Aria2 RPC Protocol: WebSocket (Secure)"
 echo -e "${CYAN}====================================================${NC}"
 echo -e "${GREEN}✓ Share link publik: AKTIF TANPA LOGIN${NC}"
 echo -e "${GREEN}✓ Dashboard: AMAN TERKUNCI${NC}"
+echo -e "${GREEN}✓ CasaOS: TERINSTALL${NC}"
+echo -e "${GREEN}✓ Folder Download: Terhubung ke /DATA/Downloads di CasaOS${NC}"
+echo -e "${CYAN}====================================================${NC}"
+echo -e "${YELLOW}TIPS: Untuk Menambahkan Shortcut GTN di CasaOS:${NC}"
+echo -e "1. Buka Dashboard CasaOS"
+echo -e "2. Klik tombol '+' > 'External Link'"
+echo -e "3. Masukkan URL: $FINAL_URL"
+echo -e "4. Masukkan Nama: $WEB_TITLE"
 echo -e "${CYAN}====================================================${NC}"
