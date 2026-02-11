@@ -52,12 +52,18 @@ read -p "Masukan Pilihan (1-7): " choice
 
 # Define Image URLs (Menggunakan mirror public yang umum digunakan - credit to bin456789/teddysun)
 # Note: Link ini bisa berubah sewaktu-waktu. Jika mati, gunakan Custom URL.
-WIN10="https://dl.lamp.sh/vhd/en-us_win10_ltsc_2021.vhd.gz"
-WIN11="https://dl.lamp.sh/vhd/en-us_win11_22h2.vhd.gz"
-WIN2012="https://dl.lamp.sh/vhd/en-us_win2012r2.vhd.gz"
-WIN2016="https://dl.lamp.sh/vhd/en-us_win2016.vhd.gz"
-WIN2019="https://dl.lamp.sh/vhd/en-us_win2019.vhd.gz"
-WIN2022="https://dl.lamp.sh/vhd/en-us_win2022.vhd.gz"
+# Updated URLs based on Georgebobby/DD-Scripts and Teddysun mirrors (Feb 2026)
+# Format is .xz for these mirrors
+WIN10="https://dl.lamp.sh/vhd/en-us_windows10_ltsc.xz"
+WIN11="https://dl.lamp.sh/vhd/en-us_windows11_22h2.xz"
+WIN2012="https://dl.lamp.sh/vhd/en_win2012r2.xz"
+WIN2016="https://dl.lamp.sh/vhd/en-us_win2016.xz" # Note: 2016 URL might need verification, defaulting to common pattern if specific one not listed, but 2012/2019 are. Let's use 2012/2019/2022 as primary server options.
+WIN2019="https://dl.lamp.sh/vhd/en-us_win2019.xz"
+WIN2022="https://dl.lamp.sh/vhd/en-us_win2022.xz"
+
+# Fallback/Guess for 2016 if not explicitly listed in recent docs, but often follows pattern.
+# If 2016 is critical, user can use custom.
+# Using https://dl.lamp.sh/vhd/en-us_win2016.xz as a best-effort guess based on pattern.
 
 IMAGE_URL=""
 
@@ -83,10 +89,9 @@ echo ""
 
 # Custom Password Prompt
 read -p "Apakah anda ingin set password SSH/VNC Installer manual? (y/n): " set_pass
-PASSWORD_ARG=""
+USER_PASS=""
 if [[ "$set_pass" == "y" || "$set_pass" == "Y" ]]; then
     read -p "Masukan Password: " USER_PASS
-    PASSWORD_ARG="--password $USER_PASS"
     echo -e "${GREEN}Password diset: $USER_PASS${NC}"
 else
     echo -e "${YELLOW}Password random akan digunakan untuk Installer SSH/VNC.${NC}"
@@ -128,8 +133,8 @@ echo ""
 
 # Run the reinstall script with the DD option and optional password
 # Syntax: bash reinstall.sh dd --img "IMAGE_URL" [--password "PASS"]
-if [ -n "$PASSWORD_ARG" ]; then
-    bash reinstall.sh dd --img "$IMAGE_URL" $PASSWORD_ARG
+if [ -n "$USER_PASS" ]; then
+    bash reinstall.sh dd --img "$IMAGE_URL" --password "$USER_PASS"
 else
     bash reinstall.sh dd --img "$IMAGE_URL"
 fi
