@@ -46,7 +46,15 @@ echo "nameserver 8.8.8.8" > /etc/resolv.conf
 systemctl stop aria2 nginx filebrowser 2>/dev/null || true
 
 # 1. Update & Dependencies
-apt update && apt install -y wget curl unzip tar aria2 nginx apache2-utils certbot python3-certbot-nginx
+apt update && apt install -y wget curl unzip tar aria2 nginx apache2-utils certbot python3-certbot-nginx python3-pip
+
+# --- FIX: DEPENDENCY CONFLICT (urllib3) ---
+# Hapus library python yang mungkin bentrok dengan Certbot bawaan APT
+if [ -f /usr/local/lib/python3.8/dist-packages/urllib3/__init__.py ]; then
+    echo -e "${YELLOW}Memperbaiki konflik dependency Python (urllib3)...${NC}"
+    pip3 uninstall -y urllib3 requests chardet idna || true
+    apt install --reinstall -y python3-urllib3 python3-requests python3-certbot-nginx python3-six
+fi
 
 # 2. Setup Direktori
 DOWNLOAD_DIR="/downloads"
@@ -201,6 +209,10 @@ ln -sf /etc/nginx/sites-available/ariang /etc/nginx/sites-enabled/
 rm -f /etc/nginx/sites-enabled/default
 
 # 7. Setup SSL (No Email)
+# Cek config nginx sebelum restart agar tidak gagal
+echo -e "${GREEN}Memeriksa konfigurasi Nginx...${NC}"
+nginx -t || { echo -e "${RED}Konfigurasi Nginx Error!${NC}"; exit 1; }
+
 if [ -n "$MY_DOMAIN" ]; then
     echo -e "${GREEN}Mengajukan SSL untuk $MY_DOMAIN...${NC}"
     systemctl restart nginx || true
