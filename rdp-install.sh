@@ -81,22 +81,38 @@ echo -e "${BLUE}[*] OS Terpilih: $OS_NAME${NC}"
 echo -e "${BLUE}[*] Image URL: $IMAGE_URL${NC}"
 echo ""
 
+# Custom Password Prompt
+read -p "Apakah anda ingin set password SSH/VNC Installer manual? (y/n): " set_pass
+PASSWORD_ARG=""
+if [[ "$set_pass" == "y" || "$set_pass" == "Y" ]]; then
+    read -p "Masukan Password: " USER_PASS
+    PASSWORD_ARG="--password $USER_PASS"
+    echo -e "${GREEN}Password diset: $USER_PASS${NC}"
+else
+    echo -e "${YELLOW}Password random akan digunakan untuk Installer SSH/VNC.${NC}"
+fi
+
 # Konfirmasi
+echo ""
 read -p "Apakah anda yakin ingin melanjutkan? (y/n): " confirm
 if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
     echo -e "${RED}Dibatalkan.${NC}"
     exit 0
 fi
 
+# Check for local installer or download it
 # Download Helper Script (reinstall.sh by bin456789 is robust)
-# Kita gunakan script ini karena dia handle network config secara otomatis
-echo ""
-echo -e "${BLUE}[*] Mendownload script installer...${NC}"
-wget --no-check-certificate -qO reinstall.sh "https://raw.githubusercontent.com/bin456789/reinstall/main/reinstall.sh"
-
 if [ ! -f "reinstall.sh" ]; then
-    echo -e "${RED}Gagal mendownload script installer! Cek koneksi internet.${NC}"
-    exit 1
+    echo ""
+    echo -e "${BLUE}[*] Script installer lokal tidak ditemukan, mendownload...${NC}"
+    wget --no-check-certificate -qO reinstall.sh "https://raw.githubusercontent.com/bin456789/reinstall/main/reinstall.sh"
+
+    if [ ! -f "reinstall.sh" ]; then
+        echo -e "${RED}Gagal mendownload script installer! Cek koneksi internet.${NC}"
+        exit 1
+    fi
+else
+    echo -e "${BLUE}[*] Menggunakan script installer lokal.${NC}"
 fi
 
 chmod +x reinstall.sh
@@ -106,10 +122,14 @@ echo ""
 echo -e "${GREEN}Mulai Installasi... VPS akan restart otomatis.${NC}"
 echo -e "${GREEN}Starting Installation... VPS will reboot automatically.${NC}"
 echo -e "${YELLOW}Proses installasi memakan waktu 10-30 menit tergantung kecepatan VPS/Internet.${NC}"
-echo -e "${YELLOW}Default Password biasanya: Teddysun.com atau P@ssw0rd atau Changeme (Tergantung Image)${NC}"
-echo -e "${YELLOW}Jika menggunakan image di atas (dl.lamp.sh), password default: Teddysun.com${NC}"
+echo -e "${YELLOW}Default Password Windows (Jika Image dari dl.lamp.sh): Teddysun.com${NC}"
+echo -e "${YELLOW}Password Custom yang anda masukan (jika ada) hanya untuk akses SSH/VNC selama proses installasi.${NC}"
 echo ""
 
-# Run the reinstall script with the DD option
-# Syntax: bash reinstall.sh -dd "IMAGE_URL"
-bash reinstall.sh -dd "$IMAGE_URL"
+# Run the reinstall script with the DD option and optional password
+# Syntax: bash reinstall.sh dd --img "IMAGE_URL" [--password "PASS"]
+if [ -n "$PASSWORD_ARG" ]; then
+    bash reinstall.sh dd --img "$IMAGE_URL" $PASSWORD_ARG
+else
+    bash reinstall.sh dd --img "$IMAGE_URL"
+fi
