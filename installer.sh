@@ -158,8 +158,8 @@ server {
 
     # File Browser Dashboard (dilindungi)
     location /files/ {
-        auth_basic "$WEB_TITLE Login";
-        auth_basic_user_file /etc/nginx/.htpasswd;
+        # auth_basic "$WEB_TITLE Login";
+        # auth_basic_user_file /etc/nginx/.htpasswd;
         proxy_pass http://127.0.0.1:8080/files/;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
