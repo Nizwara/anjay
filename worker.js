@@ -253,7 +253,7 @@ export default {
 
         <div id="contentArea">
           <div id="inboxContainer">
-            <div id="inbox" class="space-y-2 max-h-80 overflow-y-auto pr-2">
+            <div id="inbox" class="space-y-2 max-h-[600px] overflow-y-auto pr-2">
               <div class="text-center py-8 text-gtn-muted">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
                 <p class="text-sm animate-pulse-slow">Menunggu email masuk...</p>
@@ -535,7 +535,7 @@ export default {
               <span class="flex items-center gap-1"><svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>\${dateStr} \${timeStr}</span>
             </div>
           </div>
-          <div class="email-body-html max-h-96 overflow-y-auto pr-2 text-gtn-text/90">\${bodyHtml}</div>
+          <div class="email-body-html overflow-x-auto pr-2 text-gtn-text/90">\${bodyHtml}</div>
           <div class="flex gap-2 pt-2 border-t border-gtn-border">
             <button onclick="backToInbox()" class="flex-1 py-2 rounded-lg bg-gtn-card hover:bg-gtn-border transition-colors text-sm">Kembali</button>
             <button onclick="deleteEmailFromDetail('\${email.id}')" class="flex-1 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors text-sm">Hapus Email</button>
