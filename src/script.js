@@ -1071,7 +1071,7 @@ body { padding: 90px 12px 30px 12px; }
 <script>
 // --- DNS MANAGEMENT CODE START ---
 function manageDNS(zoneId, domainName) {
-  openModal(\`DNS Records - \\${domainName}\`, \`
+  openModal(\`DNS Records - \${domainName}\`, \`
     <div id="dns-management-container">
       <div style="text-align:center; padding: 20px;"><div class="spinner"></div><p>Memuat DNS Records...</p></div>
     </div>
@@ -1257,6 +1257,7 @@ async function deleteDNSRecord(zoneId, recordId, domainName) {
   }
 }
 // --- DNS MANAGEMENT CODE END ---
+
 
 </script>
 <!-- FIXED STICKY TOP NAVIGATION BAR -->
