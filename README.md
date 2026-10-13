@@ -17,6 +17,10 @@ Bot Telegram powerfull untuk mengelola repository, folder, file, dan foto/gambar
   - **`/start`**: Menampilkan panduan estetik beserta instruksi prompt & tombol ke menu utama.
   - **`/menu`**: Membuka daftar repository / workspace secara langsung.
 
+- 🔒 **Ubah Visibilitas Repo (Private <-> Public)**:
+  - Buka detail repo via tombol `ℹ️ Detail`.
+  - Klik tombol **`🌐 Ubah Jadi Public`** atau **`🔒 Ubah Jadi Private`** untuk mengubah visibilitas repo secara instan tanpa perlu repot buka website GitHub!
+
 - 📦 **Manajemen Repository Super Lengkap**:
   - **Daftar Repo & Paginasi**: Menampilkan daftar repo pengguna secara rapi dengan indikator Public (🌐) / Private (🔒) dan urutan aktivitas terbaru.
   - **Detail Repository**: Informasi lengkap seperti stars, forks, default branch, deskripsi, dan statistik update.

@@ -125,6 +125,51 @@ async function handleCallbackQuery(callbackQuery, env, ctx) {
     return await sendRepoDetail(chatId, repoName, userSettings.token, env);
   }
 
+  // TOGGLE REPOSITORY VISIBILITY (Private <-> Public)
+  if (data.startsWith("make_public:")) {
+    const repoName = data.split("make_public:")[1];
+    await answerCallback(callbackId, "Mengubah repo ke Public...", false, env);
+    const res = await fetch(`https://api.github.com/repos/${repoName}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `token ${userSettings.token}`,
+        'User-Agent': 'CF-Worker',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ private: false })
+    });
+    await deleteMessage(chatId, messageId, env);
+    if (res.ok) {
+      await sendReply(chatId, `🌐 <b>BERHASIL MENGUBAH VISIBILITAS</b>\n━━━━━━━━━━━━━━━━━━━━\nRepository <code>${escapeHtml(repoName)}</code> sekarang berstatus <b>PUBLIC 🌐</b> (dapat diakses publik).`, null, env);
+      return await sendRepoDetail(chatId, repoName, userSettings.token, env);
+    } else {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(`Gagal mengubah visibilitas repo (${res.status}): ${err.message || 'Error API GitHub'}`);
+    }
+  }
+
+  if (data.startsWith("make_private:")) {
+    const repoName = data.split("make_private:")[1];
+    await answerCallback(callbackId, "Mengubah repo ke Private...", false, env);
+    const res = await fetch(`https://api.github.com/repos/${repoName}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `token ${userSettings.token}`,
+        'User-Agent': 'CF-Worker',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ private: true })
+    });
+    await deleteMessage(chatId, messageId, env);
+    if (res.ok) {
+      await sendReply(chatId, `🔒 <b>BERHASIL MENGUBAH VISIBILITAS</b>\n━━━━━━━━━━━━━━━━━━━━\nRepository <code>${escapeHtml(repoName)}</code> sekarang berstatus <b>PRIVATE 🔒</b> (hanya kamu yang bisa lihat).`, null, env);
+      return await sendRepoDetail(chatId, repoName, userSettings.token, env);
+    } else {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(`Gagal mengubah visibilitas repo (${res.status}): ${err.message || 'Error API GitHub'}`);
+    }
+  }
+
   if (data.startsWith("confirm_del:")) {
     const repoName = data.split("confirm_del:")[1];
     await deleteMessage(chatId, messageId, env);
@@ -673,11 +718,16 @@ async function sendRepoDetail(chatId, repoName, token, env) {
   if (!res.ok) throw new Error("Gagal mengambil detail repository.");
   const r = await res.json();
 
+  const toggleBtn = r.private
+    ? { text: "🌐 Ubah Jadi Public", callback_data: `make_public:${r.full_name}` }
+    : { text: "🔒 Ubah Jadi Private", callback_data: `make_private:${r.full_name}` };
+
   const detailText = `ℹ️ <b>DETAIL REPOSITORY</b>\n━━━━━━━━━━━━━━━━━━━━\n📦 <b>Nama:</b> <code>${escapeHtml(r.full_name)}</code>\n🔒 <b>Visibility:</b> ${r.private ? 'Private 🔒' : 'Public 🌐'}\n⭐ <b>Stars:</b> ${r.stargazers_count} | 🍴 <b>Forks:</b> ${r.forks_count}\n🌿 <b>Default Branch:</b> <code>${escapeHtml(r.default_branch)}</code>\n📝 <b>Deskripsi:</b> ${escapeHtml(r.description || 'Tidak ada deskripsi.')}\n📅 <b>Update Terakhir:</b> ${new Date(r.updated_at).toLocaleString('id-ID')}\n🔗 <b>URL:</b> ${r.html_url}`;
 
   const keyboard = {
     inline_keyboard: [
       [{ text: "📂 Kelola File & Folder", callback_data: `setrepo:${r.full_name}` }],
+      [toggleBtn],
       [{ text: "🗑️ Hapus Repository", callback_data: `confirm_del:${r.full_name}` }],
       [{ text: "🔙 Kembali ke Daftar Repo", callback_data: "goto_repomenu" }]
     ]
@@ -808,7 +858,7 @@ async function sendViewFile(chatId, repoName, token, filePath, env) {
 
 // ================= 7. RENDER AESTHETIC HELP MENU =================
 async function sendHelpMenu(chatId, hasRepoSelected, env) {
-  const helpText = `✨ <b>PANDUAN & BANTUAN BOT GITHUB</b> ✨\n━━━━━━━━━━━━━━━━━━━━\n<i>Kelola repository, file, folder, dan gambar GitHub kamu secara instan dan estetik dari Telegram!</i>\n\n📌 <b>DAFTAR PERINTAH (PROMPT) UTAMA:</b>\n\n⚡ <b>/menu</b> — Langsung buka Workspace / Repo\n🚀 <b>/start</b> — Buka panduan bantuan ini\n🔑 <b>/login</b> — Masuk dengan Personal Access Token\n<code>    👉 Format: /login username token_github</code>\n<code>    👉 Format: /login token_github</code>\n👤 <b>/user</b> — Cek profil & statistik akun GitHub\n📖 <b>/help</b> — Tampilkan halaman panduan ini\n❌ <b>/cancel</b> — Batalkan aksi aktif (upload/rename)\n🚪 <b>/logout</b> — Hapus sesi login dari bot\n\n━━━━━━━━━━━━━━━━━━━━\n📸 <b>PANDUAN UPLOAD FOTO & GAMBAR:</b>\n1️⃣ Pilih repo & folder target via menu workspace.\n2️⃣ Klik tombol <b>➕ Upload File / Foto</b>.\n3️⃣ Kirim foto langsung dari galeri Telegram kamu.\n<code>    💡 Tips: Beri caption untuk set nama file custom</code>\n<code>    (contoh caption: banner.png)</code>\n\n━━━━━━━━━━━━━━━━━━━━\n📄 <b>PANDUAN UPLOAD FILE SCRIPT / TEKS:</b>\n• <b>Cara Dokumen:</b> Upload file <code>.js</code>, <code>.html</code>, <code>.json</code> dll.\n• <b>Cara Pesan Teks:</b> Ketik dengan format:\n<code>index.js console.log("Hello World");</code>\n\n━━━━━━━━━━━━━━━━━━━━\n🔒 <b>BUAT REPOSITORY PRIVATE / PUBLIC:</b>\nKetik nama repo dengan akhiran <code>private</code>:\n<code>my-awesome-app private</code>`;
+  const helpText = `✨ <b>PANDUAN & BANTUAN BOT GITHUB</b> ✨\n━━━━━━━━━━━━━━━━━━━━\n<i>Kelola repository, file, folder, dan gambar GitHub kamu secara instan dan estetik dari Telegram!</i>\n\n📌 <b>DAFTAR PERINTAH (PROMPT) UTAMA:</b>\n\n⚡ <b>/menu</b> — Langsung buka Workspace / Repo\n🚀 <b>/start</b> — Buka panduan bantuan ini\n🔑 <b>/login</b> — Masuk dengan Personal Access Token\n<code>    👉 Format: /login username token_github</code>\n<code>    👉 Format: /login token_github</code>\n👤 <b>/user</b> — Cek profil & statistik akun GitHub\n📖 <b>/help</b> — Tampilkan halaman panduan ini\n❌ <b>/cancel</b> — Batalkan aksi aktif (upload/rename)\n🚪 <b>/logout</b> — Hapus sesi login dari bot\n\n━━━━━━━━━━━━━━━━━━━━\n🌐 <b>CARA MENGUBAH REPO PRIVATE KE PUBLIC (ATAU SEBALIKNYA):</b>\n1️⃣ Buka <b>/menu</b> lalu klik tombol <b>ℹ️ Detail</b> di samping nama repository.\n2️⃣ Klik tombol <b>🌐 Ubah Jadi Public</b> atau <b>🔒 Ubah Jadi Private</b>.\n3️⃣ Status visibilitas repository akan langsung berubah otomatis!\n\n━━━━━━━━━━━━━━━━━━━━\n📸 <b>PANDUAN UPLOAD FOTO & GAMBAR:</b>\n1️⃣ Pilih repo & folder target via menu workspace.\n2️⃣ Klik tombol <b>➕ Upload File / Foto</b>.\n3️⃣ Kirim foto langsung dari galeri Telegram kamu.\n<code>    💡 Tips: Beri caption untuk set nama file custom</code>\n<code>    (contoh caption: banner.png)</code>\n\n━━━━━━━━━━━━━━━━━━━━\n📄 <b>PANDUAN UPLOAD FILE SCRIPT / TEKS:</b>\n• <b>Cara Dokumen:</b> Upload file <code>.js</code>, <code>.html</code>, <code>.json</code> dll.\n• <b>Cara Pesan Teks:</b> Ketik dengan format:\n<code>index.js console.log("Hello World");</code>\n\n━━━━━━━━━━━━━━━━━━━━\n🔒 <b>BUAT REPOSITORY PRIVATE / PUBLIC:</b>\nKetik nama repo dengan akhiran <code>private</code>:\n<code>my-awesome-app private</code>`;
 
   const keyboard = {
     inline_keyboard: [
