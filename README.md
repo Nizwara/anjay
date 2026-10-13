@@ -1,6 +1,18 @@
 # 🚀 GITHUB MANAGER TELEGRAM BOT (Cloudflare Worker)
 
+[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/USERNAME/REPOSITORY)
+
 Bot Telegram powerfull untuk mengelola repository, folder, file, dan foto/gambar di GitHub secara langsung dari Telegram tanpa perlu membuka website GitHub.
+
+---
+
+## ⚡ Deploy Instan Ke Cloudflare Workers (1-Click Deploy)
+
+Klik tombol di bawah ini untuk langsung men-deploy bot ini ke akun Cloudflare milikmu secara otomatis:
+
+[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/USERNAME/REPOSITORY)
+
+> 💡 **Catatan:** Ganti `USERNAME/REPOSITORY` pada URL tombol di atas dengan link repository GitHub milikmu (misalnya `https://deploy.workers.cloudflare.com/?url=https://github.com/namaku/my-bot-worker`).
 
 ---
 
@@ -47,7 +59,7 @@ Bot Telegram powerfull untuk mengelola repository, folder, file, dan foto/gambar
 
 ---
 
-## ⚡ Cara Quick Setup & Deploy
+## 🛠️ Cara Manual Setup & Webhook
 
 ### 1. Buat KV Namespace di Cloudflare Worker
 1. Buka dashboard Cloudflare Worker / Pages.
