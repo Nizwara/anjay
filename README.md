@@ -1,6 +1,6 @@
 # 🚀 GITHUB MANAGER TELEGRAM BOT (Cloudflare Worker)
 
-Bot Telegram powerfull untuk mengelola repository, folder, dan file GitHub secara langsung dari Telegram tanpa perlu membuka website GitHub.
+Bot Telegram powerfull untuk mengelola repository, folder, file, dan foto/gambar di GitHub secara langsung dari Telegram tanpa perlu membuka website GitHub.
 
 ---
 
@@ -11,22 +11,28 @@ Bot Telegram powerfull untuk mengelola repository, folder, dan file GitHub secar
   - Token tersimpan secara aman di Cloudflare KV (`SAWIT` / `GH_DATA`)
   - Logout sesi instan via `/logout`
   - Cek profil GitHub via `/user`
+  - Panduan interaktif via `/help`
 
 - 📦 **Manajemen Repository Super Lengkap**:
   - **Daftar Repo & Paginasi**: Menampilkan daftar repo pengguna secara rapi dengan indikator Public (🌐) / Private (🔒) dan urutan aktivitas terbaru.
   - **Detail Repository**: Informasi lengkap seperti stars, forks, default branch, deskripsi, dan statistik update.
-  - **Buat Repo Baru**: Dukungan membuat repository Public maupun Private langsung dari chat.
+  - **Buat Repo Baru**: Dukungan membuat repository Public maupun Private (`namarepo private`) langsung dari chat.
   - **Hapus Repo Safely**: Fitur konfirmasi dialog interaktif sebelum menghapus repository secara permanen.
 
+- 📸 **Upload foto / Gambar Langsung**:
+  - Kirim foto/gambar dari galeri ponsel secara langsung ke chat.
+  - Penamaan file otomatis (`photo_12345.jpg`) atau kustom melalui caption foto (misal caption: `logo.png`).
+
 - 🛠️ **Workspace & File Manager Interaktif**:
+  - **Daftar File Tanpa Icon Bingung**: Nama file ditampilkan langsung pada tombol utama tanpa icon mata yang membingungkan.
   - **Navigasi Folder & Paginasi File**: Buka sub-folder, navigasi kembali (Up Folder), dan atur pagination file/folder dengan gampang.
   - **Upload File Multifungsi**:
-    - **Otomatis**: Langsung drag-and-drop / upload dokumen file jenis apapun.
+    - **Dokumen/Gambar**: Langsung drag-and-drop / upload dokumen atau foto.
     - **Manual Teks**: Kirim pesan teks dengan format `namafile.ext isi_script`.
   - **Lihat & Download File**:
     - Tampilan kode dengan syntax block `<pre>`.
     - Unduh file sebagai dokumen fisik.
-  - **Edit File Seamless**: Edit langsung melalui pesan teks atau timpa dengan upload file baru. File berukuran besar otomatis dikirim sebagai dokumen untuk diedit kembali.
+  - **Edit File Seamless**: Edit langsung melalui pesan teks atau timpa dengan upload file/foto baru. File berukuran besar otomatis dikirim sebagai dokumen untuk diedit kembali.
   - **Rename / Move File**: Ubah nama file atau pindahkan file ke folder lain (contoh: `src/index.js`).
   - **Buat Folder Baru**: Pembuatan folder otomatis dengan `.gitkeep`.
   - **Hapus File**: Konfirmasi hapus file secara aman.
@@ -55,13 +61,14 @@ curl -X POST "https://api.telegram.org/bot<TOKEN_BOT_KAMU>/setWebhook?url=https:
 
 ---
 
-## 📋 Daftar Perintah Bot Telegram
+## 📋 Daftar Perintah Bot Telegram (Prompt List)
 
 | Perintah | Deskripsi |
 | :--- | :--- |
 | `/start` atau `/menu` | Menampilkan menu utama (Repository / Workspace) |
 | `/login [user] <token>` | Login ke akun GitHub menggunakan Personal Access Token (PAT) |
 | `/user` | Melihat informasi dan profil akun GitHub kamu |
+| `/help` | Menampilkan menu bantuan dan petunjuk format upload |
 | `/logout` | Merekam keluar dan menghapus token dari KV |
 | `/cancel` | Membatalkan aksi aktif (seperti upload/edit/rename yang sedang berlangsung) |
 
