@@ -250,9 +250,9 @@ async function handleCallbackQuery(callbackQuery, env, ctx) {
     await KV.put(`user_${chatId}`, JSON.stringify(userSettings));
     await deleteMessage(chatId, messageId, env);
     const pathText = userSettings.current_path ? `folder <code>${escapeHtml(userSettings.current_path)}/</code>` : "<b>Root Folder</b>";
-    const textAdd = `📝 <b>TAMBAH FILE / GAMBAR BARU</b>\n━━━━━━━━━━━━━━━━━━━━\n📍 Target: ${pathText}\n\n👉 <b>Cara 1 (Dokumen / Foto):</b> Kirim file dokumen atau foto/gambar langsung ke chat ini.\n👉 <b>Cara 2 (Teks Script):</b> Ketik teks dengan format:\n<code>namafile.js isi_script_kamu</code>`;
+    const textAdd = `📝 <b>TAMBAH BANYAK FILE / GAMBAR BARU</b>\n━━━━━━━━━━━━━━━━━━━━\n📍 Target: ${pathText}\n\n👉 <b>Satu / Banyak File Sekaligus:</b> Kirim satu atau beberapa file/foto sekaligus ke chat ini.\n👉 <b>Format Teks Manual:</b> Ketik teks dengan format:\n<code>namafile.js isi_script_kamu</code>\n\n📌 <i>Mode upload akan tetap aktif sampai kamu klik tombol <b>✅ Selesai / Kembali ke Folder</b> di bawah.</i>`;
     return await sendReply(chatId, textAdd, {
-      inline_keyboard: [[{ text: "❌ Batal", callback_data: "goto_filemenu" }]]
+      inline_keyboard: [[{ text: "✅ Selesai / Kembali ke Folder", callback_data: "goto_filemenu" }]]
     }, env);
   }
 
@@ -511,7 +511,7 @@ async function handleBotMessage(message, env, ctx) {
         inputName = text.trim();
       } else {
         const ext = filePath.split('.').pop() || 'jpg';
-        inputName = `photo_${Date.now()}.${ext}`;
+        inputName = `photo_${Date.now()}_${Math.floor(Math.random() * 1000)}.${ext}`;
       }
     }
     // CASE B: DOCUMENT FILE UPLOAD
@@ -545,11 +545,16 @@ async function handleBotMessage(message, env, ctx) {
       ? userSettings.target_path
       : `${currentPath}${inputName}`;
 
-    if (userSettings.state === 'WAITING_FOR_FILE_EDIT') {
+    const isEdit = userSettings.state === 'WAITING_FOR_FILE_EDIT';
+
+    if (isEdit) {
       userSettings.state = null;
       userSettings.target_path = null;
-      await KV.put(`user_${chatId}`, JSON.stringify(userSettings));
+    } else {
+      // Keep state active so continuous batch multi-file uploads work seamlessly!
+      userSettings.state = 'WAITING_FOR_FILE';
     }
+    await KV.put(`user_${chatId}`, JSON.stringify(userSettings));
 
     if (!inputName || !b64Content) throw new Error("Gagal membaca data file/gambar.");
 
@@ -572,11 +577,10 @@ async function handleBotMessage(message, env, ctx) {
       throw new Error(`API GitHub menolak upload (${pushReq.status}): ${errDetail.message || 'Error'}`);
     }
 
-    userSettings.state = null;
-    await KV.put(`user_${chatId}`, JSON.stringify(userSettings));
-
-    const inlineBtn = { inline_keyboard: [[{ text: "🔙 Kembali ke Folder", callback_data: "goto_filemenu" }]] };
-    return await sendReply(chatId, `✅ <b>BERHASIL UPLOAD!</b>\n━━━━━━━━━━━━━━━━━━━━\n📦 <b>File/Gambar:</b> <code>${escapeHtml(inputName)}</code>\n📍 <b>Path:</b> <code>${escapeHtml(fullPath)}</code>\n📦 <b>Repo:</b> <code>${escapeHtml(userSettings.repo)}</code>`, inlineBtn, env);
+    const inlineBtn = {
+      inline_keyboard: [[{ text: "✅ Selesai / Kembali ke Folder", callback_data: "goto_filemenu" }]]
+    };
+    return await sendReply(chatId, `✅ <b>BERHASIL UPLOAD!</b>\n━━━━━━━━━━━━━━━━━━━━\n📦 <b>File/Gambar:</b> <code>${escapeHtml(inputName)}</code>\n📍 <b>Path:</b> <code>${escapeHtml(fullPath)}</code>\n📦 <b>Repo:</b> <code>${escapeHtml(userSettings.repo)}</code>\n\n<i>Mode upload masih AKTIF. Kirim file/foto berikutnya atau klik tombol di bawah untuk selesai.</i>`, inlineBtn, env);
   }
 
   // 2. CREATE FOLDER
@@ -858,7 +862,7 @@ async function sendViewFile(chatId, repoName, token, filePath, env) {
 
 // ================= 7. RENDER AESTHETIC HELP MENU =================
 async function sendHelpMenu(chatId, hasRepoSelected, env) {
-  const helpText = `✨ <b>PANDUAN & BANTUAN BOT GITHUB</b> ✨\n━━━━━━━━━━━━━━━━━━━━\n<i>Kelola repository, file, folder, dan gambar GitHub kamu secara instan dan estetik dari Telegram!</i>\n\n📌 <b>DAFTAR PERINTAH (PROMPT) UTAMA:</b>\n\n⚡ <b>/menu</b> — Langsung buka Workspace / Repo\n🚀 <b>/start</b> — Buka panduan bantuan ini\n🔑 <b>/login</b> — Masuk dengan Personal Access Token\n<code>    👉 Format: /login username token_github</code>\n<code>    👉 Format: /login token_github</code>\n👤 <b>/user</b> — Cek profil & statistik akun GitHub\n📖 <b>/help</b> — Tampilkan halaman panduan ini\n❌ <b>/cancel</b> — Batalkan aksi aktif (upload/rename)\n🚪 <b>/logout</b> — Hapus sesi login dari bot\n\n━━━━━━━━━━━━━━━━━━━━\n🌐 <b>CARA MENGUBAH REPO PRIVATE KE PUBLIC (ATAU SEBALIKNYA):</b>\n1️⃣ Buka <b>/menu</b> lalu klik tombol <b>ℹ️ Detail</b> di samping nama repository.\n2️⃣ Klik tombol <b>🌐 Ubah Jadi Public</b> atau <b>🔒 Ubah Jadi Private</b>.\n3️⃣ Status visibilitas repository akan langsung berubah otomatis!\n\n━━━━━━━━━━━━━━━━━━━━\n📸 <b>PANDUAN UPLOAD FOTO & GAMBAR:</b>\n1️⃣ Pilih repo & folder target via menu workspace.\n2️⃣ Klik tombol <b>➕ Upload File / Foto</b>.\n3️⃣ Kirim foto langsung dari galeri Telegram kamu.\n<code>    💡 Tips: Beri caption untuk set nama file custom</code>\n<code>    (contoh caption: banner.png)</code>\n\n━━━━━━━━━━━━━━━━━━━━\n📄 <b>PANDUAN UPLOAD FILE SCRIPT / TEKS:</b>\n• <b>Cara Dokumen:</b> Upload file <code>.js</code>, <code>.html</code>, <code>.json</code> dll.\n• <b>Cara Pesan Teks:</b> Ketik dengan format:\n<code>index.js console.log("Hello World");</code>\n\n━━━━━━━━━━━━━━━━━━━━\n🔒 <b>BUAT REPOSITORY PRIVATE / PUBLIC:</b>\nKetik nama repo dengan akhiran <code>private</code>:\n<code>my-awesome-app private</code>`;
+  const helpText = `✨ <b>PANDUAN & BANTUAN BOT GITHUB</b> ✨\n━━━━━━━━━━━━━━━━━━━━\n<i>Kelola repository, file, folder, dan gambar GitHub kamu secara instan dan estetik dari Telegram!</i>\n\n📌 <b>DAFTAR PERINTAH (PROMPT) UTAMA:</b>\n\n⚡ <b>/menu</b> — Langsung buka Workspace / Repo\n🚀 <b>/start</b> — Buka panduan bantuan ini\n🔑 <b>/login</b> — Masuk dengan Personal Access Token\n<code>    👉 Format: /login username token_github</code>\n<code>    👉 Format: /login token_github</code>\n👤 <b>/user</b> — Cek profil & statistik akun GitHub\n📖 <b>/help</b> — Tampilkan halaman panduan ini\n❌ <b>/cancel</b> — Batalkan aksi aktif (upload/rename)\n🚪 <b>/logout</b> — Hapus sesi login dari bot\n\n━━━━━━━━━━━━━━━━━━━━\n📤 <b>CARA UPLOAD BANYAK FILE SEKALIGUS:</b>\n1️⃣ Pilih repo & folder target via <b>/menu</b>.\n2️⃣ Klik tombol <b>➕ Upload File / Foto</b>.\n3️⃣ Kirim 1 atau banyak file/foto sekaligus ke chat.\n4️⃣ Bot akan mengunggah semua file satu per satu!\n5️⃣ Klik tombol <b>✅ Selesai / Kembali ke Folder</b> jika sudah selesai.\n\n━━━━━━━━━━━━━━━━━━━━\n🌐 <b>CARA MENGUBAH REPO PRIVATE KE PUBLIC:</b>\n1️⃣ Buka <b>/menu</b> lalu klik tombol <b>ℹ️ Detail</b>.\n2️⃣ Klik tombol <b>🌐 Ubah Jadi Public</b> atau <b>🔒 Ubah Jadi Private</b>.\n\n━━━━━━━━━━━━━━━━━━━━\n📄 <b>PANDUAN UPLOAD FILE SCRIPT / TEKS:</b>\n• <b>Dokumen:</b> Upload file <code>.js</code>, <code>.html</code>, <code>.json</code> dll.\n• <b>Pesan Teks Manual:</b> Ketik dengan format:\n<code>index.js console.log("Hello World");</code>`;
 
   const keyboard = {
     inline_keyboard: [

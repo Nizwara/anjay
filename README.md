@@ -17,19 +17,19 @@ Bot Telegram powerfull untuk mengelola repository, folder, file, dan foto/gambar
   - **`/start`**: Menampilkan panduan estetik beserta instruksi prompt & tombol ke menu utama.
   - **`/menu`**: Membuka daftar repository / workspace secara langsung.
 
+- 📤 **Support Multi-File & Batch Photo Upload**:
+  - Kirim banyak file atau foto sekaligus ke chat! Bot akan memproses dan mengunggah setiap file satu per satu tanpa menghentikan mode upload.
+  - Selesaikan mode upload kapan saja dengan menekan tombol **`✅ Selesai / Kembali ke Folder`**.
+
 - 🔒 **Ubah Visibilitas Repo (Private <-> Public)**:
   - Buka detail repo via tombol `ℹ️ Detail`.
-  - Klik tombol **`🌐 Ubah Jadi Public`** atau **`🔒 Ubah Jadi Private`** untuk mengubah visibilitas repo secara instan tanpa perlu repot buka website GitHub!
+  - Klik tombol **`🌐 Ubah Jadi Public`** atau **`🔒 Ubah Jadi Private`** untuk mengubah visibilitas repo secara instan.
 
 - 📦 **Manajemen Repository Super Lengkap**:
   - **Daftar Repo & Paginasi**: Menampilkan daftar repo pengguna secara rapi dengan indikator Public (🌐) / Private (🔒) dan urutan aktivitas terbaru.
   - **Detail Repository**: Informasi lengkap seperti stars, forks, default branch, deskripsi, dan statistik update.
   - **Buat Repo Baru**: Dukungan membuat repository Public maupun Private (`namarepo private`) langsung dari chat.
   - **Hapus Repo Safely**: Fitur konfirmasi dialog interaktif sebelum menghapus repository secara permanen.
-
-- 📸 **Upload Foto / Gambar Langsung**:
-  - Kirim foto/gambar dari galeri ponsel secara langsung ke chat.
-  - Penamaan file otomatis (`photo_12345.jpg`) atau kustom melalui caption foto (misal caption: `logo.png`).
 
 - 🛠️ **Workspace & File Manager Interaktif**:
   - **Daftar File Tanpa Icon Bingung**: Nama file ditampilkan langsung pada tombol utama.
