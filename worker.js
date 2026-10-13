@@ -81,7 +81,7 @@ export default {
 // ================= 1. HANDLER TOMBOL INTERAKTIF =================
 async function handleCallbackQuery(callbackQuery, env, ctx) {
   const KV = getKV(env);
-  if (!KV) throw new Error("KV Namespace (SAWIT / GH_DATA) tidak ditemukan.");
+  if (!KV) throw new Error("KV Namespace (SAWIT / GH_DATA) tidak ditemukan. Mohon atur KV Binding SAWIT di Cloudflare Worker Settings.");
 
   const chatId = callbackQuery.message.chat.id;
   const messageId = callbackQuery.message.message_id;
@@ -385,7 +385,7 @@ async function handleCallbackQuery(callbackQuery, env, ctx) {
 // ================= 2. HANDLER TEXT CHAT & MEDIA MESSAGES =================
 async function handleBotMessage(message, env, ctx) {
   const KV = getKV(env);
-  if (!KV) throw new Error("KV Namespace (SAWIT / GH_DATA) tidak ditemukan.");
+  if (!KV) throw new Error("KV Namespace (SAWIT / GH_DATA) tidak ditemukan. Silakan atur KV Binding SAWIT di Cloudflare Dashboard.");
 
   const chatId = message.chat.id;
   const text = (message.text || message.caption || "").trim();
@@ -862,7 +862,7 @@ async function sendViewFile(chatId, repoName, token, filePath, env) {
 
 // ================= 7. RENDER AESTHETIC HELP MENU =================
 async function sendHelpMenu(chatId, hasRepoSelected, env) {
-  const helpText = `✨ <b>PANDUAN & BANTUAN BOT GITHUB</b> ✨\n━━━━━━━━━━━━━━━━━━━━\n<i>Kelola repository, file, folder, dan gambar GitHub kamu secara instan dan estetik dari Telegram!</i>\n\n📌 <b>DAFTAR PERINTAH (PROMPT) UTAMA:</b>\n\n⚡ <b>/menu</b> — Langsung buka Workspace / Repo\n🚀 <b>/start</b> — Buka panduan bantuan ini\n🔑 <b>/login</b> — Masuk dengan Personal Access Token\n<code>    👉 Format: /login username token_github</code>\n<code>    👉 Format: /login token_github</code>\n👤 <b>/user</b> — Cek profil & statistik akun GitHub\n📖 <b>/help</b> — Tampilkan halaman panduan ini\n❌ <b>/cancel</b> — Batalkan aksi aktif (upload/rename)\n🚪 <b>/logout</b> — Hapus sesi login dari bot\n\n━━━━━━━━━━━━━━━━━━━━\n📤 <b>CARA UPLOAD BANYAK FILE SEKALIGUS:</b>\n1️⃣ Pilih repo & folder target via <b>/menu</b>.\n2️⃣ Klik tombol <b>➕ Upload File / Foto</b>.\n3️⃣ Kirim 1 atau banyak file/foto sekaligus ke chat.\n4️⃣ Bot akan mengunggah semua file satu per satu!\n5️⃣ Klik tombol <b>✅ Selesai / Kembali ke Folder</b> jika sudah selesai.\n\n━━━━━━━━━━━━━━━━━━━━\n🌐 <b>CARA MENGUBAH REPO PRIVATE KE PUBLIC:</b>\n1️⃣ Buka <b>/menu</b> lalu klik tombol <b>ℹ️ Detail</b>.\n2️⃣ Klik tombol <b>🌐 Ubah Jadi Public</b> atau <b>🔒 Ubah Jadi Private</b>.\n\n━━━━━━━━━━━━━━━━━━━━\n📄 <b>PANDUAN UPLOAD FILE SCRIPT / TEKS:</b>\n• <b>Dokumen:</b> Upload file <code>.js</code>, <code>.html</code>, <code>.json</code> dll.\n• <b>Pesan Teks Manual:</b> Ketik dengan format:\n<code>index.js console.log("Hello World");</code>`;
+  const helpText = `✨ <b>PANDUAN & BANTUAN BOT GITHUB</b> ✨\n━━━━━━━━━━━━━━━━━━━━\n<i>Kelola repository, file, folder, dan gambar GitHub kamu secara instan dan estetik dari Telegram!</i>\n\n📌 <b>DAFTAR PERINTAH (PROMPT) UTAMA:</b>\n\n⚡ <b>/menu</b> — Langsung buka Workspace / Repo\n🚀 <b>/start</b> — Buka panduan bantuan ini\n🔑 <b>/login</b> — Masuk dengan Personal Access Token\n<code>    👉 Format: /login username token_github</code>\n<code>    👉 Format: /login token_github</code>\n👤 <b>/user</b> — Cek profil & statistik akun GitHub\n📖 <b>/help</b> — Tampilkan halaman panduan ini\n❌ <b>/cancel</b> — Batalkan aksi aktif (upload/rename)\n🚪 <b>/logout</b> — Hapus sesi login dari bot\n\n━━━━━━━━━━━━━━━━━━━━\n⚙️ <b>PENGATURAN ENV & KV CLOUDFLARE WORKER:</b>\n• <b>KV Binding:</b> Atur KV Binding bernama <code>SAWIT</code> atau <code>GH_DATA</code> di Cloudflare Dashboard (Settings -> Variables -> KV Namespace Bindings).\n• <b>Environment Variable:</b> Set variable <code>TG_TOKEN</code> dengan token bot Telegram kamu.\n\n━━━━━━━━━━━━━━━━━━━━\n📤 <b>CARA UPLOAD BANYAK FILE SEKALIGUS:</b>\n1️⃣ Pilih repo & folder target via <b>/menu</b>.\n2️⃣ Klik tombol <b>➕ Upload File / Foto</b>.\n3️⃣ Kirim 1 atau banyak file/foto sekaligus ke chat.\n4️⃣ Bot akan mengunggah semua file satu per satu!\n5️⃣ Klik tombol <b>✅ Selesai / Kembali ke Folder</b> jika sudah selesai.\n\n━━━━━━━━━━━━━━━━━━━━\n🌐 <b>CARA MENGUBAH REPO PRIVATE KE PUBLIC:</b>\n1️⃣ Buka <b>/menu</b> lalu klik tombol <b>ℹ️ Detail</b>.\n2️⃣ Klik tombol <b>🌐 Ubah Jadi Public</b> atau <b>🔒 Ubah Jadi Private</b>.\n\n━━━━━━━━━━━━━━━━━━━━\n📄 <b>PANDUAN UPLOAD FILE SCRIPT / TEKS:</b>\n• <b>Dokumen:</b> Upload file <code>.js</code>, <code>.html</code>, <code>.json</code> dll.\n• <b>Pesan Teks Manual:</b> Ketik dengan format:\n<code>index.js console.log("Hello World");</code>`;
 
   const keyboard = {
     inline_keyboard: [

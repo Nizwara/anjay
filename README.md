@@ -16,6 +16,67 @@ Klik tombol di bawah ini untuk langsung men-deploy bot ini ke akun Cloudflare mi
 
 ---
 
+## ⚙️ PANDUAN LENGKAP PENGATURAN ENV & KV BINDING (SANGAT PENTING!)
+
+Agar bot berjalan **100% Normal Jaya** setelah dideploy, kamu wajib mengonfigurasi **KV Namespace Binding** dan **Environment Variables** di Cloudflare Worker kamu.
+
+---
+
+### 📍 CARA 1: LEWAT DASHBOARD CLOUDFLARE (Rekomendasi untuk Pemula)
+
+#### Step 1: Buat KV Namespace
+1. Buka [Dashboard Cloudflare](https://dash.cloudflare.com/).
+2. Di menu sebelah kiri, klik **Workers & Pages** -> **KV**.
+3. Klik tombol **Create a Namespace**.
+4. Beri nama Namespace, contoh: `SAWIT_KV` (atau nama apapun bebas), lalu klik **Add**.
+
+#### Step 2: Hubungkan (Bind) KV Namespace ke Worker
+1. Masuk ke **Workers & Pages** -> Pilih Worker kamu (misal: `github-manager-bot`).
+2. Masuk ke tab **Settings** -> klik **Variables**.
+3. Gulir ke bawah sampai ke bagian **KV Namespace Bindings**.
+4. Klik **Add binding**.
+5. Isikan field berikut:
+   - **Variable name**: `SAWIT` *(atau `GH_DATA`)* ⚠️ *Harus persis huruf kapital ini!*
+   - **KV namespace**: Pilih namespace `SAWIT_KV` yang baru saja kamu buat pada Step 1.
+6. Klik **Save and deploy**.
+
+#### Step 3: Atur Environment Variable (`TG_TOKEN`)
+1. Di halaman Worker kamu -> tab **Settings** -> **Variables**.
+2. Pada bagian **Environment Variables**, klik **Add variable**.
+3. Isikan:
+   - **Variable name**: `TG_TOKEN`
+   - **Value**: Masukkan Token Bot Telegram kamu dari [@BotFather](https://t.me/BotFather) (contoh: `8789495014:AAFTA9yUl7...`).
+4. Klik **Encrypt** (opsional agar token tersembunyi) lalu klik **Save and deploy**.
+
+#### Step 4: Hubungkan Webhook Telegram
+Buka browser atau jalankan perintah cURL ini untuk mendaftarkan URL Worker kamu ke Telegram API:
+```bash
+https://api.telegram.org/bot<TOKEN_BOT_KAMU>/setWebhook?url=https://<WORKER-KAMU>.<SUBDOMAIN>.workers.dev
+```
+
+---
+
+### 📍 CARA 2: LEWAT WRANGLER (`wrangler.toml`)
+
+Jika kamu mengedit atau men-deploy menggunakan Wrangler CLI, cukup tambahkan konfigurasi berikut ke file `wrangler.toml` kamu:
+
+```toml
+name = "github-manager-bot"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# Environment Variables (Token Bot Telegram)
+[vars]
+TG_TOKEN = "8789495014:AAFTA9yUl7POqkV-jEQGrNc0W858mXuKkls"
+
+# KV Namespace Binding (Penyimpanan data user)
+[[kv_namespaces]]
+binding = "SAWIT"             # Bisa juga "GH_DATA"
+id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # Isikan ID KV Namespace kamu
+```
+
+---
+
 ## ✨ Fitur Utama
 
 - 🔑 **Sistem Autentikasi Mudah & Aman**:
@@ -56,28 +117,6 @@ Klik tombol di bawah ini untuk langsung men-deploy bot ini ke akun Cloudflare mi
   - **Rename / Move File**: Ubah nama file atau pindahkan file ke folder lain (contoh: `src/index.js`).
   - **Buat Folder Baru**: Pembuatan folder otomatis dengan `.gitkeep`.
   - **Hapus File**: Konfirmasi hapus file secara aman.
-
----
-
-## 🛠️ Cara Manual Setup & Webhook
-
-### 1. Buat KV Namespace di Cloudflare Worker
-1. Buka dashboard Cloudflare Worker / Pages.
-2. Buat KV Namespace baru bernama `SAWIT` atau `GH_DATA`.
-3. Bind KV Namespace tersebut ke Worker kamu dengan Variable Name `SAWIT` atau `GH_DATA`.
-
-### 2. Environment Variables (Opsional)
-- **`TG_TOKEN`**: Token Bot Telegram dari [@BotFather](https://t.me/BotFather).
-  *(Jika tidak diisi, bot akan otomatis menggunakan fallback token default yang sudah terpasang)*.
-
-### 3. Deploy Code
-Copy seluruh isi file `worker.js` dan paste ke Cloudflare Worker Editor, lalu **Save and Deploy**.
-
-### 4. Set Telegram Webhook
-Set webhook bot Telegram kamu ke URL Cloudflare Worker yang telah dideploy:
-```bash
-curl -X POST "https://api.telegram.org/bot<TOKEN_BOT_KAMU>/setWebhook?url=https://<WORKER-SUBDOMAIN>.workers.dev"
-```
 
 ---
 
