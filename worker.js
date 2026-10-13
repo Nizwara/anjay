@@ -99,7 +99,7 @@ async function handleCallbackQuery(callbackQuery, env, ctx) {
   }
 
   if (!userSettings.token && !data.startsWith("help")) {
-    return await sendReply(chatId, `⚠️ <b>BELUM LOGIN</b>\n━━━━━━━━━━━━━━━━━━\nSilakan login terlebih dahulu menggunakan format:\n<code>/login username token_github</code>\natau\n<code>/login token_github</code>`, null, env);
+    return await sendReply(chatId, `⚠️ <b>BELUM LOGIN</b>\n━━━━━━━━━━━━━━━━━━━━\nSilakan login terlebih dahulu menggunakan format:\n<code>/login username token_github</code>\natau\n<code>/login token_github</code>`, null, env);
   }
 
   // --- REPOSITORY NAVIGATION ---
@@ -128,7 +128,7 @@ async function handleCallbackQuery(callbackQuery, env, ctx) {
   if (data.startsWith("confirm_del:")) {
     const repoName = data.split("confirm_del:")[1];
     await deleteMessage(chatId, messageId, env);
-    const textDel = `⚠️ <b>KONFIRMASI HAPUS REPOSITORY</b>\n━━━━━━━━━━━━━━━━━━\nApakah kamu yakin ingin menghapus repository <code>${escapeHtml(repoName)}</code> secara permanen dari GitHub?\n\n<i>Tindakan ini tidak bisa dibatalkan!</i>`;
+    const textDel = `⚠️ <b>KONFIRMASI HAPUS REPOSITORY</b>\n━━━━━━━━━━━━━━━━━━━━\nApakah kamu yakin ingin menghapus repository <code>${escapeHtml(repoName)}</code> secara permanen dari GitHub?\n\n<i>Tindakan ini tidak bisa dibatalkan!</i>`;
     return await sendReply(chatId, textDel, {
       inline_keyboard: [
         [{ text: "✅ Ya, Hapus Selamanya!", callback_data: `do_del:${repoName}` }],
@@ -155,7 +155,7 @@ async function handleCallbackQuery(callbackQuery, env, ctx) {
         userSettings.current_path = "";
         await KV.put(`user_${chatId}`, JSON.stringify(userSettings));
       }
-      return await sendReply(chatId, `🗑️ <b>BERHASIL</b>\n━━━━━━━━━━━━━━━━━━\nRepo <code>${escapeHtml(repoName)}</code> telah dihapus permanen.`, {
+      return await sendReply(chatId, `🗑️ <b>BERHASIL</b>\n━━━━━━━━━━━━━━━━━━━━\nRepo <code>${escapeHtml(repoName)}</code> telah dihapus permanen.`, {
         inline_keyboard: [[{ text: "🔙 Kembali ke Daftar Repo", callback_data: "goto_repomenu" }]]
       }, env);
     } else {
@@ -168,7 +168,7 @@ async function handleCallbackQuery(callbackQuery, env, ctx) {
     userSettings.state = 'WAITING_FOR_NEW_REPO_NAME';
     await KV.put(`user_${chatId}`, JSON.stringify(userSettings));
     await deleteMessage(chatId, messageId, env);
-    return await sendReply(chatId, `✨ <b>BUAT REPOSITORY BARU</b>\n━━━━━━━━━━━━━━━━━━\nKetik nama repository baru yang ingin dibuat:\n\n<i>Atau kirim format:</i> <code>namarepo [private]</code> <i>untuk membuat repo private.</i>\n\nContoh: <code>my-awesome-app private</code>`, {
+    return await sendReply(chatId, `✨ <b>BUAT REPOSITORY BARU</b>\n━━━━━━━━━━━━━━━━━━━━\nKetik nama repository baru yang ingin dibuat:\n\n<i>Atau kirim format:</i> <code>namarepo private</code> <i>untuk repo private.</i>\n\nContoh: <code>my-awesome-app private</code>`, {
       inline_keyboard: [[{ text: "❌ Batal", callback_data: "goto_repomenu" }]]
     }, env);
   }
@@ -205,7 +205,7 @@ async function handleCallbackQuery(callbackQuery, env, ctx) {
     await KV.put(`user_${chatId}`, JSON.stringify(userSettings));
     await deleteMessage(chatId, messageId, env);
     const pathText = userSettings.current_path ? `folder <code>${escapeHtml(userSettings.current_path)}/</code>` : "<b>Root Folder</b>";
-    const textAdd = `📝 <b>TAMBAH FILE / GAMBAR BARU</b>\n━━━━━━━━━━━━━━━━━━\n📍 Target: ${pathText}\n\n👉 <b>Cara 1 (Dokumen / Foto):</b> Kirim file dokumen atau foto/gambar langsung ke chat ini.\n👉 <b>Cara 2 (Teks Script):</b> Ketik teks dengan format:\n<code>namafile.js isi_script_kamu</code>`;
+    const textAdd = `📝 <b>TAMBAH FILE / GAMBAR BARU</b>\n━━━━━━━━━━━━━━━━━━━━\n📍 Target: ${pathText}\n\n👉 <b>Cara 1 (Dokumen / Foto):</b> Kirim file dokumen atau foto/gambar langsung ke chat ini.\n👉 <b>Cara 2 (Teks Script):</b> Ketik teks dengan format:\n<code>namafile.js isi_script_kamu</code>`;
     return await sendReply(chatId, textAdd, {
       inline_keyboard: [[{ text: "❌ Batal", callback_data: "goto_filemenu" }]]
     }, env);
@@ -215,7 +215,7 @@ async function handleCallbackQuery(callbackQuery, env, ctx) {
     userSettings.state = 'WAITING_FOR_FOLDER_NAME';
     await KV.put(`user_${chatId}`, JSON.stringify(userSettings));
     await deleteMessage(chatId, messageId, env);
-    return await sendReply(chatId, `📁 <b>BUAT FOLDER BARU</b>\n━━━━━━━━━━━━━━━━━━\nKetik nama folder baru yang ingin dibuat:`, {
+    return await sendReply(chatId, `📁 <b>BUAT FOLDER BARU</b>\n━━━━━━━━━━━━━━━━━━━━\nKetik nama folder baru yang ingin dibuat:`, {
       inline_keyboard: [[{ text: "❌ Batal", callback_data: "goto_filemenu" }]]
     }, env);
   }
@@ -265,11 +265,11 @@ async function handleCallbackQuery(callbackQuery, env, ctx) {
       }
 
       if (isiLama.length > 3500) {
-        const textBig = `✏️ <b>EDIT FILE (Ukuran Besar)</b>\n━━━━━━━━━━━━━━━━━━\n📄 <b>File:</b> <code>${escapeHtml(targetFile)}</code>\n\n⚠️ <i>Ukuran file besar (${isiLama.length} karakter). File dikirim sebagai dokumen di bawah ini.</i>\n\n🔄 <b>Cara Edit:</b> Download, edit isinya, lalu kirim kembali file hasil edit ke sini untuk menimpa file lama.`;
+        const textBig = `✏️ <b>EDIT FILE (Ukuran Besar)</b>\n━━━━━━━━━━━━━━━━━━━━\n📄 <b>File:</b> <code>${escapeHtml(targetFile)}</code>\n\n⚠️ <i>Ukuran file besar (${isiLama.length} karakter). File dikirim sebagai dokumen di bawah ini.</i>\n\n🔄 <b>Cara Edit:</b> Download, edit isinya, lalu kirim kembali file hasil edit ke sini untuk menimpa file lama.`;
         await sendReply(chatId, textBig, { inline_keyboard: [[{ text: "❌ Batal", callback_data: "goto_filemenu" }]] }, env);
         return await sendDocumentBuffer(chatId, isiLama, targetFile.split('/').pop(), env);
       } else {
-        const textEdit = `✏️ <b>EDIT FILE MANUAL</b>\n━━━━━━━━━━━━━━━━━━\n📄 <b>File:</b> <code>${escapeHtml(targetFile)}</code>\n\n<b>Cara 1:</b> Kirim file dokumen/foto baru ke sini.\n<b>Cara 2:</b> Salin teks di bawah ini, edit, lalu kirim kembali sebagai chat biasa:\n\n<pre>${escapeHtml(isiLama)}</pre>`;
+        const textEdit = `✏️ <b>EDIT FILE MANUAL</b>\n━━━━━━━━━━━━━━━━━━━━\n📄 <b>File:</b> <code>${escapeHtml(targetFile)}</code>\n\n<b>Cara 1:</b> Kirim file dokumen/foto baru ke sini.\n<b>Cara 2:</b> Salin teks di bawah ini, edit, lalu kirim kembali sebagai chat biasa:\n\n<pre>${escapeHtml(isiLama)}</pre>`;
         return await sendReply(chatId, textEdit, { inline_keyboard: [[{ text: "❌ Batal", callback_data: "goto_filemenu" }]] }, env);
       }
     } else {
@@ -283,7 +283,7 @@ async function handleCallbackQuery(callbackQuery, env, ctx) {
     userSettings.target_path = targetFile;
     await KV.put(`user_${chatId}`, JSON.stringify(userSettings));
     await deleteMessage(chatId, messageId, env);
-    return await sendReply(chatId, `✏️ <b>RENAME / MOVE FILE</b>\n━━━━━━━━━━━━━━━━━━\n📄 <b>File Asal:</b> <code>${escapeHtml(targetFile)}</code>\n\nKetik nama atau path baru untuk file ini:\nContoh: <code>index.js</code> atau <code>src/index.js</code>`, {
+    return await sendReply(chatId, `✏️ <b>RENAME / MOVE FILE</b>\n━━━━━━━━━━━━━━━━━━━━\n📄 <b>File Asal:</b> <code>${escapeHtml(targetFile)}</code>\n\nKetik nama atau path baru untuk file ini:\nContoh: <code>index.js</code> atau <code>src/index.js</code>`, {
       inline_keyboard: [[{ text: "❌ Batal", callback_data: "goto_filemenu" }]]
     }, env);
   }
@@ -291,7 +291,7 @@ async function handleCallbackQuery(callbackQuery, env, ctx) {
   if (data.startsWith("delfile:")) {
     const targetFile = data.substring("delfile:".length);
     await deleteMessage(chatId, messageId, env);
-    return await sendReply(chatId, `⚠️ <b>KONFIRMASI HAPUS ITEM</b>\n━━━━━━━━━━━━━━━━━━\nApakah kamu yakin ingin menghapus <code>${escapeHtml(targetFile)}</code> dari repository?`, {
+    return await sendReply(chatId, `⚠️ <b>KONFIRMASI HAPUS ITEM</b>\n━━━━━━━━━━━━━━━━━━━━\nApakah kamu yakin ingin menghapus <code>${escapeHtml(targetFile)}</code> dari repository?`, {
       inline_keyboard: [
         [{ text: "✅ Ya, Hapus!", callback_data: `dodel_file:${targetFile}` }],
         [{ text: "❌ Batal", callback_data: "goto_filemenu" }]
@@ -360,12 +360,27 @@ async function handleBotMessage(message, env, ctx) {
   // Command /logout
   if (text === '/logout') {
     await KV.delete(`user_${chatId}`);
-    return await sendReply(chatId, `🚪 <b>LOGOUT BERHASIL</b>\n━━━━━━━━━━━━━━━━━━\nSesi dan token kamu telah dihapus dari sistem.`, null, env);
+    return await sendReply(chatId, `🚪 <b>LOGOUT BERHASIL</b>\n━━━━━━━━━━━━━━━━━━━━\nSesi dan token kamu telah dihapus dari sistem.`, null, env);
   }
 
   // Command /help
   if (text === '/help') {
     return await sendHelpMenu(chatId, userSettings.repo ? true : false, env);
+  }
+
+  // Command /start - Displays Aesthetic Guide
+  if (text === '/start') {
+    return await sendHelpMenu(chatId, userSettings.repo ? true : false, env);
+  }
+
+  // Command /menu - Opens Main Workspace or Repository Menu Directly
+  if (text === '/menu') {
+    if (!userSettings.token) {
+      return await sendReply(chatId, `🔑 <b>BELUM LOGIN</b>\n━━━━━━━━━━━━━━━━━━━━\nSilakan login terlebih dahulu menggunakan format:\n<code>/login username token_github</code>\natau\n<code>/login token_github</code>`, null, env);
+    }
+    return userSettings.repo
+      ? await sendFileMenu(chatId, userSettings.repo, userSettings.token, userSettings.current_path || "", 1, env)
+      : await sendRepoMenu(chatId, userSettings.token, 1, env);
   }
 
   // Command /login
@@ -398,7 +413,7 @@ async function handleBotMessage(message, env, ctx) {
     userSettings = { user: username, token: token, repo: null, current_path: "", state: null };
     await KV.put(`user_${chatId}`, JSON.stringify(userSettings));
 
-    await sendReply(chatId, `✅ <b>LOGIN SUKSES!</b>\n━━━━━━━━━━━━━━━━━━\nSelamat datang, <b>${escapeHtml(userData.name || username)}</b> (@${escapeHtml(username)})\nToken berhasil disimpan secara aman di KV.`, null, env);
+    await sendReply(chatId, `✅ <b>LOGIN SUKSES!</b>\n━━━━━━━━━━━━━━━━━━━━\nSelamat datang, <b>${escapeHtml(userData.name || username)}</b> (@${escapeHtml(username)})\nToken berhasil disimpan secara aman di KV.`, null, env);
     return await sendRepoMenu(chatId, token, 1, env);
   }
 
@@ -413,28 +428,15 @@ async function handleBotMessage(message, env, ctx) {
     if (!userRes.ok) throw new Error("Gagal mengambil info user dari GitHub.");
     const u = await userRes.json();
 
-    const userInfo = `👤 <b>PROFIL GITHUB</b>\n━━━━━━━━━━━━━━━━━━\n📛 <b>Nama:</b> ${escapeHtml(u.name || '-')}\n🪪 <b>Username:</b> <code>${escapeHtml(u.login)}</code>\n📦 <b>Public Repos:</b> ${u.public_repos}\n🔒 <b>Private Repos:</b> ${u.total_private_repos || 0}\n👥 <b>Followers:</b> ${u.followers} | <b>Following:</b> ${u.following}\n🔗 <b>Profile URL:</b> ${u.html_url}`;
+    const userInfo = `👤 <b>PROFIL GITHUB</b>\n━━━━━━━━━━━━━━━━━━━━\n📛 <b>Nama:</b> ${escapeHtml(u.name || '-')}\n🪪 <b>Username:</b> <code>${escapeHtml(u.login)}</code>\n📦 <b>Public Repos:</b> ${u.public_repos}\n🔒 <b>Private Repos:</b> ${u.total_private_repos || 0}\n👥 <b>Followers:</b> ${u.followers} | <b>Following:</b> ${u.following}\n🔗 <b>Profile URL:</b> ${u.html_url}`;
     return await sendReply(chatId, userInfo, {
       inline_keyboard: [[{ text: "📂 Lihat Repository", callback_data: "goto_repomenu" }]]
     }, env);
   }
 
-  // Command /menu or /start
-  if (text === '/menu' || text === '/start') {
-    if (!userSettings.token) {
-      const welcomeMsg = `🤖 <b>GITHUB MANAGER BOT POWERFULL</b>\n━━━━━━━━━━━━━━━━━━\nBot ini memungkinkan kamu mengelola repository, folder, file, dan gambar di GitHub secara instan dari Telegram.\n\n🔑 <b>Cara Login:</b>\n<code>/login username token_github</code>\natau\n<code>/login token_github</code>\n\n❓ Ketik <code>/help</code> untuk panduan lengkap dan daftar prompt perintah.`;
-      return await sendReply(chatId, welcomeMsg, {
-        inline_keyboard: [[{ text: "❓ Bantuan / Panduan Prompt", callback_data: "goto_help" }]]
-      }, env);
-    }
-    return userSettings.repo
-      ? await sendFileMenu(chatId, userSettings.repo, userSettings.token, userSettings.current_path || "", 1, env)
-      : await sendRepoMenu(chatId, userSettings.token, 1, env);
-  }
-
   // Handle active states (WAITING_FOR_FILE, WAITING_FOR_FILE_EDIT, WAITING_FOR_FOLDER_NAME, etc.)
   if (!userSettings.token) {
-    return await sendReply(chatId, `🤖 Silakan login terlebih dahulu dengan format:\n<code>/login username token_github</code>`, null, env);
+    return await sendReply(chatId, `🤖 Silakan login terlebih dahulu dengan format:\n<code>/login username token_github</code>\n\nAtau ketik <code>/start</code> untuk panduan lengkap.`, null, env);
   }
 
   let currentPath = userSettings.current_path ? `${userSettings.current_path}/` : "";
@@ -529,7 +531,7 @@ async function handleBotMessage(message, env, ctx) {
     await KV.put(`user_${chatId}`, JSON.stringify(userSettings));
 
     const inlineBtn = { inline_keyboard: [[{ text: "🔙 Kembali ke Folder", callback_data: "goto_filemenu" }]] };
-    return await sendReply(chatId, `✅ <b>BERHASIL UPLOAD!</b>\n━━━━━━━━━━━━━━━━━━\n📦 <b>File/Gambar:</b> <code>${escapeHtml(inputName)}</code>\n📍 <b>Path:</b> <code>${escapeHtml(fullPath)}</code>\n📦 <b>Repo:</b> <code>${escapeHtml(userSettings.repo)}</code>`, inlineBtn, env);
+    return await sendReply(chatId, `✅ <b>BERHASIL UPLOAD!</b>\n━━━━━━━━━━━━━━━━━━━━\n📦 <b>File/Gambar:</b> <code>${escapeHtml(inputName)}</code>\n📍 <b>Path:</b> <code>${escapeHtml(fullPath)}</code>\n📦 <b>Repo:</b> <code>${escapeHtml(userSettings.repo)}</code>`, inlineBtn, env);
   }
 
   // 2. CREATE FOLDER
@@ -578,7 +580,7 @@ async function handleBotMessage(message, env, ctx) {
     userSettings.current_path = "";
     await KV.put(`user_${chatId}`, JSON.stringify(userSettings));
 
-    await sendReply(chatId, `✨ <b>REPOSITORY BERHASIL DIBUAT!</b>\n━━━━━━━━━━━━━━━━━━\n📦 Name: <code>${escapeHtml(createdData.full_name)}</code>\n🔒 Visibility: <b>${createdData.private ? 'Private' : 'Public'}</b>`, null, env);
+    await sendReply(chatId, `✨ <b>REPOSITORY BERHASIL DIBUAT!</b>\n━━━━━━━━━━━━━━━━━━━━\n📦 Name: <code>${escapeHtml(createdData.full_name)}</code>\n🔒 Visibility: <b>${createdData.private ? 'Private' : 'Public'}</b>`, null, env);
     return await sendFileMenu(chatId, userSettings.repo, userSettings.token, "", 1, env);
   }
 
@@ -617,13 +619,13 @@ async function handleBotMessage(message, env, ctx) {
     userSettings.target_path = null;
     await KV.put(`user_${chatId}`, JSON.stringify(userSettings));
 
-    return await sendReply(chatId, `✅ <b>BERHASIL RENAME/MOVE!</b>\n━━━━━━━━━━━━━━━━━━\n📄 <b>Lama:</b> <code>${escapeHtml(oldPath)}</code>\n📄 <b>Baru:</b> <code>${escapeHtml(newPath)}</code>`, {
+    return await sendReply(chatId, `✅ <b>BERHASIL RENAME/MOVE!</b>\n━━━━━━━━━━━━━━━━━━━━\n📄 <b>Lama:</b> <code>${escapeHtml(oldPath)}</code>\n📄 <b>Baru:</b> <code>${escapeHtml(newPath)}</code>`, {
       inline_keyboard: [[{ text: "🔙 Kembali ke Folder", callback_data: "goto_filemenu" }]]
     }, env);
   }
 
   // Fallback default message if no state match
-  return await sendReply(chatId, `❓ Perintah tidak dikenali. Ketik <code>/help</code> untuk melihat daftar perintah.`, null, env);
+  return await sendReply(chatId, `❓ Perintah tidak dikenali.\n\nKetik <code>/menu</code> untuk masuk menu utama, atau <code>/help</code> untuk melihat panduan lengkap.`, null, env);
 }
 
 // ================= 3. RENDER LOGIKA DAFTAR REPO =================
@@ -657,9 +659,9 @@ async function sendRepoMenu(chatId, token, page = 1, env) {
   if (navRow.length > 0) keyboard.inline_keyboard.push(navRow);
 
   keyboard.inline_keyboard.push([{ text: "✨ Buat Repository Baru", callback_data: "action_createrepo" }]);
-  keyboard.inline_keyboard.push([{ text: "❓ Help / Bantuan Prompt", callback_data: "goto_help" }]);
+  keyboard.inline_keyboard.push([{ text: "📖 Bantuan & Panduan Prompt", callback_data: "goto_help" }]);
 
-  const textHeader = `🚀 <b>GITHUB MANAGER BOT</b>\n━━━━━━━━━━━━━━━━━━\n📂 <b>Daftar Repository</b> (Hal ${page}/${Math.ceil(totalRepos / perPage) || 1})\n<i>Total: ${totalRepos} Repo | Diurutkan dari yang terbaru diubah.</i>\n\nPilih repo yang ingin dikelola:`;
+  const textHeader = `🚀 <b>GITHUB MANAGER BOT</b>\n━━━━━━━━━━━━━━━━━━━━\n📂 <b>Daftar Repository</b> (Hal ${page}/${Math.ceil(totalRepos / perPage) || 1})\n<i>Total: ${totalRepos} Repo | Diurutkan dari yang terbaru diubah.</i>\n\nPilih repo yang ingin dikelola:`;
   return await sendReply(chatId, textHeader, keyboard, env);
 }
 
@@ -671,7 +673,7 @@ async function sendRepoDetail(chatId, repoName, token, env) {
   if (!res.ok) throw new Error("Gagal mengambil detail repository.");
   const r = await res.json();
 
-  const detailText = `ℹ️ <b>DETAIL REPOSITORY</b>\n━━━━━━━━━━━━━━━━━━\n📦 <b>Nama:</b> <code>${escapeHtml(r.full_name)}</code>\n🔒 <b>Visibility:</b> ${r.private ? 'Private 🔒' : 'Public 🌐'}\n⭐ <b>Stars:</b> ${r.stargazers_count} | 🍴 <b>Forks:</b> ${r.forks_count}\n🌿 <b>Default Branch:</b> <code>${escapeHtml(r.default_branch)}</code>\n📝 <b>Deskripsi:</b> ${escapeHtml(r.description || 'Tidak ada deskripsi.')}\n📅 <b>Update Terakhir:</b> ${new Date(r.updated_at).toLocaleString('id-ID')}\n🔗 <b>URL:</b> ${r.html_url}`;
+  const detailText = `ℹ️ <b>DETAIL REPOSITORY</b>\n━━━━━━━━━━━━━━━━━━━━\n📦 <b>Nama:</b> <code>${escapeHtml(r.full_name)}</code>\n🔒 <b>Visibility:</b> ${r.private ? 'Private 🔒' : 'Public 🌐'}\n⭐ <b>Stars:</b> ${r.stargazers_count} | 🍴 <b>Forks:</b> ${r.forks_count}\n🌿 <b>Default Branch:</b> <code>${escapeHtml(r.default_branch)}</code>\n📝 <b>Deskripsi:</b> ${escapeHtml(r.description || 'Tidak ada deskripsi.')}\n📅 <b>Update Terakhir:</b> ${new Date(r.updated_at).toLocaleString('id-ID')}\n🔗 <b>URL:</b> ${r.html_url}`;
 
   const keyboard = {
     inline_keyboard: [
@@ -726,7 +728,6 @@ async function sendFileMenu(chatId, repoName, token, path = "", page = 1, env) {
       } else if (item.type === 'file') {
         if (item.name === '.gitkeep') return;
         currentListText += ` ├ 📄 <code>${escapeHtml(item.name)}</code>\n`;
-        // Removed standalone eye button. Clear button row with file name directly opening preview.
         keyboard.inline_keyboard.push([
           { text: `📄 ${item.name}`, callback_data: `viewfile:${item.path}` }
         ]);
@@ -752,11 +753,11 @@ async function sendFileMenu(chatId, repoName, token, path = "", page = 1, env) {
   ]);
   keyboard.inline_keyboard.push([
     { text: "🔙 Ke Daftar Repo", callback_data: "goto_repomenu" },
-    { text: "❓ Bantuan / Prompt", callback_data: "goto_help" }
+    { text: "📖 Bantuan & Prompt", callback_data: "goto_help" }
   ]);
 
   const displayPath = cleanPath ? `/${cleanPath}` : "/ (Root)";
-  const textHeader = `🛠️ <b>WORKSPACE MANAGER</b>\n━━━━━━━━━━━━━━━━━━\n📦 <b>Repo:</b> <code>${escapeHtml(repoName)}</code>\n📍 <b>Path:</b> <code>${escapeHtml(displayPath)}</code>\n━━━━━━━━━━━━━━━━━━\n<b>Isi Direktori:</b>\n${currentListText}\n<i>Klik nama file/folder untuk membuka item:</i>`;
+  const textHeader = `🛠️ <b>WORKSPACE MANAGER</b>\n━━━━━━━━━━━━━━━━━━━━\n📦 <b>Repo:</b> <code>${escapeHtml(repoName)}</code>\n📍 <b>Path:</b> <code>${escapeHtml(displayPath)}</code>\n━━━━━━━━━━━━━━━━━━━━\n<b>Isi Direktori:</b>\n${currentListText}\n<i>Klik nama file/folder untuk membuka item:</i>`;
   return await sendReply(chatId, textHeader, keyboard, env);
 }
 
@@ -786,7 +787,7 @@ async function sendViewFile(chatId, repoName, token, filePath, env) {
     }
   }
 
-  const text = `📄 <b>LIHAT FILE</b>\n━━━━━━━━━━━━━━━━━━\n📦 <b>Repo:</b> <code>${escapeHtml(repoName)}</code>\n📄 <b>Path:</b> <code>${escapeHtml(filePath)}</code>\n📏 <b>Ukuran:</b> ${data.size} bytes\n━━━━━━━━━━━━━━━━━━\n${contentFormatted}`;
+  const text = `📄 <b>LIHAT FILE</b>\n━━━━━━━━━━━━━━━━━━━━\n📦 <b>Repo:</b> <code>${escapeHtml(repoName)}</code>\n📄 <b>Path:</b> <code>${escapeHtml(filePath)}</code>\n📏 <b>Ukuran:</b> ${data.size} bytes\n━━━━━━━━━━━━━━━━━━━━\n${contentFormatted}`;
 
   const keyboard = {
     inline_keyboard: [
@@ -805,13 +806,13 @@ async function sendViewFile(chatId, repoName, token, filePath, env) {
   return await sendReply(chatId, text, keyboard, env);
 }
 
-// ================= 7. RENDER HELP MENU =================
+// ================= 7. RENDER AESTHETIC HELP MENU =================
 async function sendHelpMenu(chatId, hasRepoSelected, env) {
-  const helpText = `❓ <b>PANDUAN PROMPT & BANTUAN BOT</b>\n━━━━━━━━━━━━━━━━━━\nBot ini dirancang agar pengelolaan GitHub melalui Telegram menjadi sangat mudah!\n\n📋 <b>DAFTAR COMMAND (PROMPT):</b>\n• <code>/start</code> atau <code>/menu</code> - Buka menu utama\n• <code>/login username token_github</code> - Login ke akun GitHub\n• <code>/login token_github</code> - Login cepat menggunakan PAT Token\n• <code>/user</code> - Cek profil & statistik akun GitHub\n• <code>/help</code> - Tampilkan panduan ini\n• <code>/cancel</code> - Batal aksi aktif (upload/edit/rename)\n• <code>/logout</code> - Keluar & hapus token dari bot\n\n━━━━━━━━━━━━━━━━━━\n📸 <b>CARA UPLOAD FOTO / GAMBAR:</b>\n1. Pilih repository & folder target di menu workspace.\n2. Klik tombol <b>➕ Upload File / Foto</b>.\n3. Langsung kirim foto/gambar dari galeri kamu ke chat Telegram!\n4. <i>Opsional:</i> Beri caption dengan nama file (contoh: <code>logo.png</code>). Jika tanpa caption, nama file akan dibuat otomatis.\n\n━━━━━━━━━━━━━━━━━━\n📄 <b>CARA UPLOAD SCRIPT TEKS:</b>\n1. Klik <b>➕ Upload File / Foto</b>.\n2. Ketik dengan format:\n<code>index.js console.log("Hello World")</code>\n\n━━━━━━━━━━━━━━━━━━\n📁 <b>BUAT REPOSITORY PRIVATE / PUBLIC:</b>\n1. Klik <b>✨ Buat Repository Baru</b> di menu repo.\n2. Ketik nama repo, misal: <code>my-project private</code>`;
+  const helpText = `✨ <b>PANDUAN & BANTUAN BOT GITHUB</b> ✨\n━━━━━━━━━━━━━━━━━━━━\n<i>Kelola repository, file, folder, dan gambar GitHub kamu secara instan dan estetik dari Telegram!</i>\n\n📌 <b>DAFTAR PERINTAH (PROMPT) UTAMA:</b>\n\n⚡ <b>/menu</b> — Langsung buka Workspace / Repo\n🚀 <b>/start</b> — Buka panduan bantuan ini\n🔑 <b>/login</b> — Masuk dengan Personal Access Token\n<code>    👉 Format: /login username token_github</code>\n<code>    👉 Format: /login token_github</code>\n👤 <b>/user</b> — Cek profil & statistik akun GitHub\n📖 <b>/help</b> — Tampilkan halaman panduan ini\n❌ <b>/cancel</b> — Batalkan aksi aktif (upload/rename)\n🚪 <b>/logout</b> — Hapus sesi login dari bot\n\n━━━━━━━━━━━━━━━━━━━━\n📸 <b>PANDUAN UPLOAD FOTO & GAMBAR:</b>\n1️⃣ Pilih repo & folder target via menu workspace.\n2️⃣ Klik tombol <b>➕ Upload File / Foto</b>.\n3️⃣ Kirim foto langsung dari galeri Telegram kamu.\n<code>    💡 Tips: Beri caption untuk set nama file custom</code>\n<code>    (contoh caption: banner.png)</code>\n\n━━━━━━━━━━━━━━━━━━━━\n📄 <b>PANDUAN UPLOAD FILE SCRIPT / TEKS:</b>\n• <b>Cara Dokumen:</b> Upload file <code>.js</code>, <code>.html</code>, <code>.json</code> dll.\n• <b>Cara Pesan Teks:</b> Ketik dengan format:\n<code>index.js console.log("Hello World");</code>\n\n━━━━━━━━━━━━━━━━━━━━\n🔒 <b>BUAT REPOSITORY PRIVATE / PUBLIC:</b>\nKetik nama repo dengan akhiran <code>private</code>:\n<code>my-awesome-app private</code>`;
 
   const keyboard = {
     inline_keyboard: [
-      [{ text: "🔙 Kembali ke Workspace", callback_data: hasRepoSelected ? "goto_filemenu" : "goto_repomenu" }]
+      [{ text: "🚀 Masuk Ke Menu Utama", callback_data: hasRepoSelected ? "goto_filemenu" : "goto_repomenu" }]
     ]
   };
 
