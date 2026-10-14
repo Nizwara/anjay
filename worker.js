@@ -78,6 +78,47 @@ export default {
   }
 };
 
+// Recursive helper function to delete directory contents from GitHub
+async function deleteFolderRecursive(repo, token, folderPath) {
+  const cleanPath = folderPath.replace(/^\/+|\/+$/g, '');
+  const url = `https://api.github.com/repos/${repo}/contents/${cleanPath}`;
+  const res = await fetch(url, {
+    headers: { 'Authorization': `token ${token}`, 'User-Agent': 'CF-Worker' }
+  });
+
+  if (!res.ok) {
+    if (res.status === 404) return 0;
+    throw new Error(`Gagal membaca folder ${cleanPath} (Status: ${res.status})`);
+  }
+
+  const items = await res.json();
+  let deletedCount = 0;
+
+  if (Array.isArray(items)) {
+    for (const item of items) {
+      if (item.type === 'dir') {
+        deletedCount += await deleteFolderRecursive(repo, token, item.path);
+      } else {
+        const delRes = await fetch(`https://api.github.com/repos/${repo}/contents/${item.path}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `token ${token}`, 'User-Agent': 'CF-Worker', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: `Delete file ${item.path} in folder ${cleanPath}`, sha: item.sha })
+        });
+        if (delRes.ok) deletedCount++;
+      }
+    }
+  } else if (items.type === 'file') {
+    const delRes = await fetch(`https://api.github.com/repos/${repo}/contents/${items.path}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `token ${token}`, 'User-Agent': 'CF-Worker', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: `Delete file ${items.path}`, sha: items.sha })
+    });
+    if (delRes.ok) deletedCount++;
+  }
+
+  return deletedCount;
+}
+
 // ================= 1. HANDLER TOMBOL INTERAKTIF =================
 async function handleCallbackQuery(callbackQuery, env, ctx) {
   const KV = getKV(env);
@@ -346,24 +387,37 @@ async function handleCallbackQuery(callbackQuery, env, ctx) {
 
   if (data.startsWith("dodel_file:")) {
     const targetFile = data.substring("dodel_file:".length);
+    await answerCallback(callbackId, "Menghapus item...", false, env);
+
     const check = await fetch(`https://api.github.com/repos/${userSettings.repo}/contents/${targetFile}`, {
       headers: { 'Authorization': `token ${userSettings.token}`, 'User-Agent': 'CF-Worker' }
     });
+
     if (check.ok) {
       const itemInfo = await check.json();
+
+      // IF IT'S A DIRECTORY (Array of items):
       if (Array.isArray(itemInfo)) {
-        throw new Error("Penghapusan folder berisi banyak file lewat API terbatas. Silakan hapus file di dalamnya satu-persatu.");
-      } else {
+        await sendReply(chatId, `⏳ <i>Menghapus seluruh isi folder <code>${escapeHtml(targetFile)}</code> secara rekursif...</i>`, null, env);
+        const deletedFiles = await deleteFolderRecursive(userSettings.repo, userSettings.token, targetFile);
+        await deleteMessage(chatId, messageId, env);
+        await sendReply(chatId, `🗑️ <b>FOLDER BERHASIL DIHAPUS</b>\n━━━━━━━━━━━━━━━━━━━━\nFolder <code>${escapeHtml(targetFile)}</code> (${deletedFiles} file) telah dihapus dari repository.`, null, env);
+      }
+      // IF IT'S A SINGLE FILE:
+      else {
         const sha = itemInfo.sha;
         const delReq = await fetch(`https://api.github.com/repos/${userSettings.repo}/contents/${targetFile}`, {
           method: 'DELETE',
           headers: { 'Authorization': `token ${userSettings.token}`, 'User-Agent': 'CF-Worker', 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: "Hapus file via Telegram Bot", sha })
+          body: JSON.stringify({ message: `Hapus file ${targetFile} via Telegram Bot`, sha })
         });
         if (!delReq.ok) throw new Error("Gagal menghapus file dari GitHub.");
+        await deleteMessage(chatId, messageId, env);
       }
+    } else {
+      throw new Error(`Item ${targetFile} tidak ditemukan di GitHub.`);
     }
-    await deleteMessage(chatId, messageId, env);
+
     return await sendFileMenu(chatId, userSettings.repo, userSettings.token, userSettings.current_path || "", 1, env);
   }
 
@@ -777,7 +831,7 @@ async function sendFileMenu(chatId, repoName, token, path = "", page = 1, env) {
         currentListText += ` ├ 📁 <b>${escapeHtml(item.name)}</b>\n`;
         keyboard.inline_keyboard.push([
           { text: `📁 Buka [${item.name}]`, callback_data: `open_dir:${item.path}` },
-          { text: `🗑️ Hapus`, callback_data: `delfile:${item.path}` }
+          { text: `🗑️ Hapus Folder`, callback_data: `delfile:${item.path}` }
         ]);
       } else if (item.type === 'file') {
         if (item.name === '.gitkeep') return;
@@ -862,7 +916,7 @@ async function sendViewFile(chatId, repoName, token, filePath, env) {
 
 // ================= 7. RENDER AESTHETIC HELP MENU =================
 async function sendHelpMenu(chatId, hasRepoSelected, env) {
-  const helpText = `✨ <b>PANDUAN & BANTUAN BOT GITHUB</b> ✨\n━━━━━━━━━━━━━━━━━━━━\n<i>Kelola repository, file, folder, dan gambar GitHub kamu secara instan dan estetik dari Telegram!</i>\n\n📌 <b>DAFTAR PERINTAH (PROMPT) UTAMA:</b>\n\n⚡ <b>/menu</b> — Langsung buka Workspace / Repo\n🚀 <b>/start</b> — Buka panduan bantuan ini\n🔑 <b>/login</b> — Masuk dengan Personal Access Token\n<code>    👉 Format: /login username token_github</code>\n<code>    👉 Format: /login token_github</code>\n👤 <b>/user</b> — Cek profil & statistik akun GitHub\n📖 <b>/help</b> — Tampilkan halaman panduan ini\n❌ <b>/cancel</b> — Batalkan aksi aktif (upload/rename)\n🚪 <b>/logout</b> — Hapus sesi login dari bot\n\n━━━━━━━━━━━━━━━━━━━━\n⚙️ <b>PENGATURAN ENV & KV CLOUDFLARE WORKER:</b>\n• <b>KV Binding:</b> Atur KV Binding bernama <code>SAWIT</code> atau <code>GH_DATA</code> di Cloudflare Dashboard (Settings -> Variables -> KV Namespace Bindings).\n• <b>Environment Variable:</b> Set variable <code>TG_TOKEN</code> dengan token bot Telegram kamu.\n\n━━━━━━━━━━━━━━━━━━━━\n📤 <b>CARA UPLOAD BANYAK FILE SEKALIGUS:</b>\n1️⃣ Pilih repo & folder target via <b>/menu</b>.\n2️⃣ Klik tombol <b>➕ Upload File / Foto</b>.\n3️⃣ Kirim 1 atau banyak file/foto sekaligus ke chat.\n4️⃣ Bot akan mengunggah semua file satu per satu!\n5️⃣ Klik tombol <b>✅ Selesai / Kembali ke Folder</b> jika sudah selesai.\n\n━━━━━━━━━━━━━━━━━━━━\n🌐 <b>CARA MENGUBAH REPO PRIVATE KE PUBLIC:</b>\n1️⃣ Buka <b>/menu</b> lalu klik tombol <b>ℹ️ Detail</b>.\n2️⃣ Klik tombol <b>🌐 Ubah Jadi Public</b> atau <b>🔒 Ubah Jadi Private</b>.\n\n━━━━━━━━━━━━━━━━━━━━\n📄 <b>PANDUAN UPLOAD FILE SCRIPT / TEKS:</b>\n• <b>Dokumen:</b> Upload file <code>.js</code>, <code>.html</code>, <code>.json</code> dll.\n• <b>Pesan Teks Manual:</b> Ketik dengan format:\n<code>index.js console.log("Hello World");</code>`;
+  const helpText = `✨ <b>PANDUAN & BANTUAN BOT GITHUB</b> ✨\n━━━━━━━━━━━━━━━━━━━━\n<i>Kelola repository, file, folder, dan gambar GitHub kamu secara instan dan estetik dari Telegram!</i>\n\n📌 <b>DAFTAR PERINTAH (PROMPT) UTAMA:</b>\n\n⚡ <b>/menu</b> — Langsung buka Workspace / Repo\n🚀 <b>/start</b> — Buka panduan bantuan ini\n🔑 <b>/login</b> — Masuk dengan Personal Access Token\n<code>    👉 Format: /login username token_github</code>\n<code>    👉 Format: /login token_github</code>\n👤 <b>/user</b> — Cek profil & statistik akun GitHub\n📖 <b>/help</b> — Tampilkan halaman panduan ini\n❌ <b>/cancel</b> — Batalkan aksi aktif (upload/rename)\n🚪 <b>/logout</b> — Hapus sesi login dari bot\n\n━━━━━━━━━━━━━━━━━━━━\n⚙️ <b>PENGATURAN ENV & KV CLOUDFLARE WORKER:</b>\n• <b>KV Binding:</b> Atur KV Binding bernama <code>SAWIT</code> atau <code>GH_DATA</code> di Cloudflare Dashboard (Settings -> Variables -> KV Namespace Bindings).\n• <b>Environment Variable:</b> Set variable <code>TG_TOKEN</code> dengan token bot Telegram kamu.\n\n━━━━━━━━━━━━━━━━━━━━\n🗑️ <b>HAPUS FOLDER REKURSIF:</b>\nKlik tombol <b>🗑️ Hapus Folder</b> pada folder di menu workspace. Bot akan secara otomatis menghapus seluruh isi file di dalam folder tersebut sampai bersih!\n\n━━━━━━━━━━━━━━━━━━━━\n📤 <b>CARA UPLOAD BANYAK FILE SEKALIGUS:</b>\n1️⃣ Pilih repo & folder target via <b>/menu</b>.\n2️⃣ Klik tombol <b>➕ Upload File / Foto</b>.\n3️⃣ Kirim 1 atau banyak file/foto sekaligus ke chat.\n4️⃣ Bot akan mengunggah semua file satu per satu!\n5️⃣ Klik tombol <b>✅ Selesai / Kembali ke Folder</b> jika sudah selesai.\n\n━━━━━━━━━━━━━━━━━━━━\n🌐 <b>CARA MENGUBAH REPO PRIVATE KE PUBLIC:</b>\n1️⃣ Buka <b>/menu</b> lalu klik tombol <b>ℹ️ Detail</b>.\n2️⃣ Klik tombol <b>🌐 Ubah Jadi Public</b> atau <b>🔒 Ubah Jadi Private</b>.\n\n━━━━━━━━━━━━━━━━━━━━\n📄 <b>PANDUAN UPLOAD FILE SCRIPT / TEKS:</b>\n• <b>Dokumen:</b> Upload file <code>.js</code>, <code>.html</code>, <code>.json</code> dll.\n• <b>Pesan Teks Manual:</b> Ketik dengan format:\n<code>index.js console.log("Hello World");</code>`;
 
   const keyboard = {
     inline_keyboard: [

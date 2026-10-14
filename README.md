@@ -90,6 +90,9 @@ id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # Isikan ID KV Namespace kamu
   - **`/start`**: Menampilkan panduan estetik beserta instruksi prompt & tombol ke menu utama.
   - **`/menu`**: Membuka daftar repository / workspace secara langsung.
 
+- 🗑️ **Hapus Folder Rekursif**:
+  - Klik tombol **`🗑️ Hapus Folder`** pada item direktori untuk menghapus seluruh folder beserta file di dalamnya secara otomatis tanpa menyisakan `.gitkeep`.
+
 - 📤 **Support Multi-File & Batch Photo Upload**:
   - Kirim banyak file atau foto sekaligus ke chat! Bot akan memproses dan mengunggah setiap file satu per satu tanpa menghentikan mode upload.
   - Selesaikan mode upload kapan saja dengan menekan tombol **`✅ Selesai / Kembali ke Folder`**.
@@ -116,7 +119,7 @@ id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # Isikan ID KV Namespace kamu
   - **Edit File Seamless**: Edit langsung melalui pesan teks atau timpa dengan upload file/foto baru. File berukuran besar otomatis dikirim sebagai dokumen untuk diedit kembali.
   - **Rename / Move File**: Ubah nama file atau pindahkan file ke folder lain (contoh: `src/index.js`).
   - **Buat Folder Baru**: Pembuatan folder otomatis dengan `.gitkeep`.
-  - **Hapus File**: Konfirmasi hapus file secara aman.
+  - **Hapus File / Folder**: Konfirmasi hapus file atau folder secara aman.
 
 ---
 
