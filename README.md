@@ -16,7 +16,21 @@ Klik tombol di bawah ini untuk langsung men-deploy bot ini ke akun Cloudflare mi
 
 ---
 
-## ⚙️ PANDUAN LENGKAP PENGATURAN ENV & KV BINDING (SANGAT PENTING!)
+## 🔑 SYARAT PAT TOKEN GITHUB (PENTING SANGAT ILMUNYA!)
+
+Agar bot bisa membaca, mengubah file, dan **MENGHAPUS REPOSITORY**, pastikan Personal Access Token (PAT) milikmu dibuat dengan izin berikut di GitHub (`Settings -> Developer settings -> Personal access tokens`):
+
+1. **Classic Token (PAT Classic):**
+   - ✅ **`repo`** (Full control of private repositories)
+   - ✅ **`delete_repo`** *(WAJIB CENTANG INI UNTUK MENYALAKAN FITUR HAPUS REPO)*
+
+2. **Fine-grained Token:**
+   - ✅ Repository permissions: **`Administration`** -> **`Read and write`** *(Wajib untuk izin hapus repo)*
+   - ✅ Repository permissions: **`Contents`** -> **`Read and write`**
+
+---
+
+## ⚙️ PANDUAN LENGKAP PENGATURAN ENV & KV BINDING
 
 Agar bot berjalan **100% Normal Jaya** setelah dideploy, kamu wajib mengonfigurasi **KV Namespace Binding** dan **Environment Variables** di Cloudflare Worker kamu.
 
@@ -105,7 +119,7 @@ id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # Isikan ID KV Namespace kamu
   - **Daftar Repo & Paginasi**: Menampilkan daftar repo pengguna secara rapi dengan indikator Public (🌐) / Private (🔒) dan urutan aktivitas terbaru.
   - **Detail Repository**: Informasi lengkap seperti stars, forks, default branch, deskripsi, dan statistik update.
   - **Buat Repo Baru**: Dukungan membuat repository Public maupun Private (`namarepo private`) langsung dari chat.
-  - **Hapus Repo Safely**: Fitur konfirmasi dialog interaktif sebelum menghapus repository secara permanen.
+  - **Hapus Repo Safely**: Fitur hapus repository permanen dengan informasi lisensi izin token PAT.
 
 - 🛠️ **Workspace & File Manager Interaktif**:
   - **Daftar File Tanpa Icon Bingung**: Nama file ditampilkan langsung pada tombol utama.
@@ -134,10 +148,3 @@ id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # Isikan ID KV Namespace kamu
 | `/help` | Menampilkan halaman bantuan & panduan prompt |
 | `/logout` | Keluar dan menghapus token dari KV |
 | `/cancel` | Membatalkan aksi aktif (seperti upload/edit/rename) |
-
----
-
-## 🔑 Scope Token GitHub (PAT) Yang Dibutuhkan
-Saat membuat Personal Access Token di GitHub (`Settings -> Developer settings -> Personal access tokens`), pastikan centang scope berikut:
-- `repo` (Full control of private repositories)
-- `delete_repo` (Jika ingin menggunakan fitur hapus repository)
